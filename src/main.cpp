@@ -2,10 +2,16 @@
 #include <mpi.h>
 #include <algorithm>
 #include <vector>
+#include <stdlib.h> 
+#include <list>
+
+#include "user.h"
 
 using namespace std;
+//Is the number of parameters that can be passed when the program execute
 #define NUMBER_OF_PARAMETERS 9
 
+//Retuns the value associated to the option between the two pointers
 char* getCmdOption(char ** begin, char ** end, const string & option)
 {
     char ** itr = std::find(begin, end, option);
@@ -16,16 +22,24 @@ char* getCmdOption(char ** begin, char ** end, const string & option)
     return 0;
 }
 
+//Retuns true if in the between the two pointer the option string has been found
 bool cmdOptionExists(char** begin, char** end, const string& option)
 {
     return find(begin, end, option) != end;
 }
+
+//Returns the total number of areas. It returns 0 if they are not multiple.
+int getNumberOfAreas(int W,int L, int w,int l);
+
+//Retusn the list of ID of the user associated to processor_rank.
+list<int> getUserIDs(int I, int processor_rank, int world_size);
 
 int main(int argc, char** argv) {
     MPI_Init(NULL, NULL);
 
     int my_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+    
     string requiredParameters[NUMBER_OF_PARAMETERS] = {"-N","-I","-W","-L","-w","-l","-v","-d","-t"};
     if(my_rank==0 && cmdOptionExists(argv, argv+argc, "-h"))
     {
@@ -77,11 +91,47 @@ int main(int argc, char** argv) {
             cout << "Error with parameter " << requiredParameters[i];
         }
     }
-    //TODO create are manager that manages a certain area based on the number of process(create object area)
+
+    //Get the number of processors in the world
     int world_size;
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
 
+    //Compute the number of areas that has to be managed
+    int number_of_areas = getNumberOfAreas(W,L,w,l);
+    if(!number_of_areas && my_rank==0){
+        cout << "The provided dimension are not multiple!" << requiredParameters[i];
+        MPI_Finalize();
+        return -1;
+    }
+
+    //Assign different users to different processor
+    list<int> processor_user_IDs = getUserIDs(N,my_rank,world_size);
+
+    //Create the user associated to each processor
+    map<int,User> process_users;
+    for(int i : processor_user_IDs){
+        Position userPosition(rand(),rand(),v,rand(),rand());
+        User newUser(i,userPosition);
+        process_users.insert({ i ,newUser});
+    }
+    cout << process_users.size();
 
     MPI_Finalize();
     return 0;
+}
+
+
+int getNumberOfAreas(int W,int L, int w,int l){
+    if(W%w==0 && L%l==0){
+        return W/w * L/l;
+    }else
+        return 0;
+}
+
+list<int> getUserIDs(int I, int processor_rank, int world_size){
+    list<int> areas_ID;
+    for(int i=processor_rank; i<I;i+=world_size){
+        areas_ID.push_back(i);
+    }
+    return areas_ID;
 }
