@@ -4,11 +4,19 @@
 #include <iostream>
 #include <algorithm>
 #include <vector>
+#include "serializable.h"
 
 using namespace std;
 
+//It is the struct of the Position object used for serialization during comuinication.
+typedef struct position_struct_t {
+  int x,y;
+  int vel;
+  int dirX,dirY;
+} position_struct;
+
 //Represents the position of the user
-class Position
+class Position : public Serializable<position_struct>
 {
     public:
         //Constructor of Position, it requires the x coordinate, the 
@@ -22,6 +30,12 @@ class Position
         //Update the actual value on the Position at each call, based on the
         //elapsed time(in seconds).
         void updatePosition(int deltaTime);
+        //It returns the struct of a Position that can be used for serialization.
+        shared_ptr<position_struct> getStruct();
+        //The destructor of the Position class.
+        ~Position();
+        //It returns the datatype that can be used in order to send serialize this object in the struct and send it.
+        static MPI_Datatype getMPIType(vector<MPI_Datatype> requiredDatatypes);
     private:
         //x and y coordinates of the position.
         int x,y{0};
@@ -31,6 +45,5 @@ class Position
         int dirX,dirY{0};
     protected:
 };
-
 
 #endif

@@ -4,8 +4,8 @@
 #include <vector>
 #include <stdlib.h> 
 #include <list>
-
-#include "user.h"
+     
+#include "user/user.h"
 
 using namespace std;
 //Is the number of parameters that can be passed when the program execute
@@ -31,8 +31,8 @@ bool cmdOptionExists(char** begin, char** end, const string& option)
 //Returns the total number of areas. It returns 0 if they are not multiple.
 int getNumberOfAreas(int W,int L, int w,int l);
 
-//Retusn the list of ID of the user associated to processor_rank.
-list<int> getUserIDs(int I, int processor_rank, int world_size);
+//Returns the list of ID of the user associated to processor_rank.
+list<int> getAreaIDs(int numberOfAreas, int processor_rank, int world_size);
 
 int main(int argc, char** argv) {
     MPI_Init(NULL, NULL);
@@ -92,6 +92,13 @@ int main(int argc, char** argv) {
         }
     }
 
+    //Register the required MPI types.
+    vector<MPI_Datatype> mpi_datatypes;
+    MPI_Datatype mpi_position = Position::getMPIType(mpi_datatypes);
+    mpi_datatypes.push_back(mpi_position);
+    MPI_Datatype mpi_user = User::getMPIType(mpi_datatypes);
+
+
     //Get the number of processors in the world
     int world_size;
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
@@ -105,16 +112,17 @@ int main(int argc, char** argv) {
     }
 
     //Assign different users to different processor
-    list<int> processor_user_IDs = getUserIDs(N,my_rank,world_size);
+    list<int> processor_areas_IDs = getAreaIDs(number_of_areas,my_rank,world_size);
 
     //Create the user associated to each processor
-    map<int,User> process_users;
-    for(int i : processor_user_IDs){
-        Position userPosition(rand(),rand(),v,rand(),rand());
-        User newUser(i,userPosition);
-        process_users.insert({ i ,newUser});
-    }
-    cout << process_users.size();
+    //TODO later associated user to the various area
+    // map<int,User> process_users;
+    // for(int i : processor_user_IDs){
+    //     Position userPosition(rand(),rand(),v,rand(),rand());
+    //     User newUser(i,userPosition);
+    //     process_users.insert({ i ,newUser});
+    // }
+    // cout << process_users.size();
 
     MPI_Finalize();
     return 0;
@@ -128,9 +136,9 @@ int getNumberOfAreas(int W,int L, int w,int l){
         return 0;
 }
 
-list<int> getUserIDs(int I, int processor_rank, int world_size){
+list<int> getAreaIDs(int numberOfAreas, int processor_rank, int world_size){
     list<int> areas_ID;
-    for(int i=processor_rank; i<I;i+=world_size){
+    for(int i=processor_rank; i<numberOfAreas;i+=world_size){
         areas_ID.push_back(i);
     }
     return areas_ID;
