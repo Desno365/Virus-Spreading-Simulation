@@ -4,12 +4,18 @@
 #include <vector>
 #include <stdlib.h> 
 #include <list>
+#include <tuple>
+#include <unistd.h> //For debugging
      
 #include "user/user.h"
+#include "area/area.h"
 
 using namespace std;
 //Is the number of parameters that can be passed when the program execute
 #define NUMBER_OF_PARAMETERS 9
+//Is the size of the matrix that is considered as a neighborhoodof an Area.
+//NOTE: it has to be ODD.
+#define NEIGHBOR_DISTANCE 3
 
 //Retuns the value associated to the option between the two pointers
 char* getCmdOption(char ** begin, char ** end, const string & option)
@@ -31,15 +37,37 @@ bool cmdOptionExists(char** begin, char** end, const string& option)
 //Returns the total number of areas. It returns 0 if they are not multiple.
 int getNumberOfAreas(int W,int L, int w,int l);
 
-//Returns the list of ID of the user associated to processor_rank.
-list<int> getAreaIDs(int numberOfAreas, int processor_rank, int world_size);
+//Returns the lenght of row in which the map is divide when generating the areas.
+int getStride(int W,int w);
 
+//Returns the vector of Area associated to the provided processor_rank.
+vector<Area> getArea(int numberOfAreas, int processor_rank, int world_size,int stride);
+
+
+static int prova;
 int main(int argc, char** argv) {
+
+
+
     MPI_Init(NULL, NULL);
 
     int my_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-    
+
+    //Used only for debugging comment this part below if not interested
+    if(my_rank==0){//User for debugging removed this if not interested.
+        volatile int ifl = 0;
+        char hostname[256];
+        gethostname(hostname, sizeof(hostname));
+        printf("PID %d\n", getpid());
+        fflush(stdout);
+        while (0 == ifl)
+            sleep(5);
+    }
+
+    MPI_Barrier(MPI_COMM_WORLD);
+    //Used only for debugging comment this if not interested
+
     string requiredParameters[NUMBER_OF_PARAMETERS] = {"-N","-I","-W","-L","-w","-l","-v","-d","-t"};
     if(my_rank==0 && cmdOptionExists(argv, argv+argc, "-h"))
     {
@@ -92,7 +120,7 @@ int main(int argc, char** argv) {
         }
     }
 
-    //Register the required MPI types.
+    //Register the required MPI types. 
     vector<MPI_Datatype> mpi_datatypes;
     MPI_Datatype mpi_position = Position::getMPIType(mpi_datatypes);
     mpi_datatypes.push_back(mpi_position);
@@ -112,7 +140,7 @@ int main(int argc, char** argv) {
     }
 
     //Assign different users to different processor
-    list<int> processor_areas_IDs = getAreaIDs(number_of_areas,my_rank,world_size);
+    vector<Area> processor_areas = getArea(number_of_areas,my_rank,world_size,getStride(W,w));
 
     //Create the user associated to each processor
     //TODO later associated user to the various area
@@ -136,10 +164,52 @@ int getNumberOfAreas(int W,int L, int w,int l){
         return 0;
 }
 
-list<int> getAreaIDs(int numberOfAreas, int processor_rank, int world_size){
-    list<int> areas_ID;
-    for(int i=processor_rank; i<numberOfAreas;i+=world_size){
-        areas_ID.push_back(i);
+int getStride(int W,int w){
+    return W/w;
+}
+
+//NOTE: the ids of the areas are assigned from left to right, top to bottom in increasing order.
+vector<Area> getArea(int numberOfAreas, int processor_rank, int world_size,int stride){
+    vector<Area> areas;
+    int minAreasForProcessor = numberOfAreas / world_size;
+    int maxAreasForProcessor = numberOfAreas % world_size == 0 ? minAreasForProcessor : minAreasForProcessor + 1;
+    int leftOutAreas = numberOfAreas % world_size;
+    int startingAreaID,endingAreaID;
+    if(processor_rank<leftOutAreas){
+        startingAreaID = maxAreasForProcessor*(processor_rank);
+        endingAreaID = startingAreaID+maxAreasForProcessor;
+    }else{
+        startingAreaID = maxAreasForProcessor*leftOutAreas + minAreasForProcessor*(processor_rank-leftOutAreas);
+        endingAreaID = startingAreaID+minAreasForProcessor;
     }
-    return areas_ID;
+    for(int i=startingAreaID; i<endingAreaID;i++){
+        Area newArea(i%stride,i/stride);
+        areas.push_back(newArea);
+    }
+    for(Area &area:areas){
+        tuple<int,int> areaCor = area.getCoordinate();
+        int neighborStartCol = get<0>(areaCor)-(int)(NEIGHBOR_DISTANCE/2);
+        int neighborStartRow = get<1>(areaCor)-(int)(NEIGHBOR_DISTANCE/2);
+        //Starts from the top and go down to the right
+        for(int i=0;i<NEIGHBOR_DISTANCE;i++){//i is the Row
+            for (int j = 0; j < NEIGHBOR_DISTANCE; j++)//j is the Col
+            {
+                int neighborAreaCol = neighborStartCol+j;
+                int neighborAreaRow = neighborStartRow+i;
+                if(neighborAreaCol>=0 && neighborAreaRow>=0 && (neighborAreaCol!=get<0>(areaCor) || neighborAreaRow!=get<1>(areaCor))){
+                    int neighborID = neighborAreaCol+neighborAreaRow*stride;
+                    int processorArea;
+                    if(neighborID<maxAreasForProcessor*(leftOutAreas)){
+                        processorArea = neighborID/maxAreasForProcessor;
+                    }else{
+                        neighborID-=leftOutAreas*maxAreasForProcessor;
+                        processorArea = leftOutAreas + neighborID/minAreasForProcessor;
+                    }
+                    NeighborArea neighborArea(processorArea);
+                    area.setNeighborArea(neighborArea,(Direction)(i*NEIGHBOR_DISTANCE+j));
+                }
+            }            
+        }
+    }
+    return areas;
 }

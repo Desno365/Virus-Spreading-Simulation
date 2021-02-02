@@ -48,4 +48,7 @@ MPI_Datatype User::getMPIType(vector<MPI_Datatype> requiredDatatypes){
     return mpi_user;
 }
 
+int User::getId(){
+    return this->id;
+}
 

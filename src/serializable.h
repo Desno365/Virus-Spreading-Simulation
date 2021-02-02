@@ -12,6 +12,7 @@ class Serializable
     public:
         virtual ~Serializable() = 0;
         virtual shared_ptr<T> getStruct() = 0;
+        //TODO add the fromStruct method
 };
 
 template<typename T>

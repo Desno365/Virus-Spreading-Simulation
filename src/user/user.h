@@ -23,6 +23,7 @@ class User: public Serializable<user_struct>
         Position pos;
         void setInfected(bool);
         bool isInfected();
+        int getId();
         ~User();
         shared_ptr<user_struct> getStruct();
         //It returns the datatype that can be used in order to send serialize this object in the struct and send it.
