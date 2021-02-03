@@ -4,15 +4,17 @@
 #include <iostream>
 #include <algorithm>
 #include <vector>
+#include <tuple>
 #include "serializable.h"
 
 using namespace std;
 
 //It is the struct of the Position object used for serialization during comuinication.
+//It does not have the velocity parameters since the velocity is the same among
+//all processor.
 typedef struct position_struct_t {
-  int x,y;
-  int vel;
-  int dirX,dirY;
+  float x,y;
+  float dirX,dirY;
 } position_struct;
 
 //Represents the position of the user
@@ -22,13 +24,11 @@ class Position : public Serializable<position_struct>
         //Constructor of Position, it requires the x coordinate, the 
         //y coordinate, the vel velocity of movement of the user,
         //and the component X and Y of the direction vector. 
-        Position(int x, int y, int vel, int dirX, int dirY);
-        //Sets the velocity to vel
-        void setVelocity(int vel);
+        Position(float x, float y, float vel, float dirX, float dirY);
         //Sets the direction to the vector represented by dirX and dirY.
-        void setDirection(int dirX, int dirY);
-        //Update the actual value on the Position at each call, based on the
-        //elapsed time(in seconds).
+        void setDirection(float dirX, float dirY);
+        //Update the actual value on the Position at each call. It advance of 1 second
+        //since the time step is alwasy the same.
         void updatePosition(int deltaTime);
         //It returns the struct of a Position that can be used for serialization.
         shared_ptr<position_struct> getStruct();
@@ -38,11 +38,11 @@ class Position : public Serializable<position_struct>
         static MPI_Datatype getMPIType(vector<MPI_Datatype> requiredDatatypes);
     private:
         //x and y coordinates of the position.
-        int x,y{0};
+        float x,y{0};
         //velocity associated to the user movement
-        int vel{0};
+        float vel{0};
         //direction of movement of the user
-        int dirX,dirY{0};
+        float dirX,dirY{0};
     protected:
 };
 

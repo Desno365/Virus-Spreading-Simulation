@@ -31,6 +31,7 @@ class User: public Serializable<user_struct>
     private:
         int id;
         bool infected;
+        //TODO add infection time after 10 days it elaps
     protected:
 };
 

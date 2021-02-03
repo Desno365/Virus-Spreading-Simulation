@@ -6,13 +6,15 @@
 #include <list>
 #include <tuple>
 #include <unistd.h> //For debugging
-     
+#include <stdlib.h>
+#include <time.h>  
+
 #include "user/user.h"
 #include "area/area.h"
 
 using namespace std;
 //Is the number of parameters that can be passed when the program execute
-#define NUMBER_OF_PARAMETERS 9
+#define NUMBER_OF_PARAMETERS 10
 //Is the size of the matrix that is considered as a neighborhoodof an Area.
 //NOTE: it has to be ODD.
 #define NEIGHBOR_DISTANCE 3
@@ -43,11 +45,7 @@ int getStride(int W,int w);
 //Returns the vector of Area associated to the provided processor_rank.
 vector<Area> getArea(int numberOfAreas, int processor_rank, int world_size,int stride);
 
-
-static int prova;
 int main(int argc, char** argv) {
-
-
 
     MPI_Init(NULL, NULL);
 
@@ -55,37 +53,46 @@ int main(int argc, char** argv) {
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 
     //Used only for debugging comment this part below if not interested
-    if(my_rank==0){//User for debugging removed this if not interested.
-        volatile int ifl = 0;
-        char hostname[256];
-        gethostname(hostname, sizeof(hostname));
-        printf("PID %d\n", getpid());
-        fflush(stdout);
-        while (0 == ifl)
-            sleep(5);
+    char * parameter = getCmdOption(argv, argv + argc, "--debug");
+    if(parameter)
+    {    
+        //The ID of the processor required to be debuged.
+        int debuged_processor = atoi(parameter);
+        if(my_rank==debuged_processor){
+            volatile int ifl = 0;//Set this variable to 0 in order to resume the computation
+            char hostname[256];
+            gethostname(hostname, sizeof(hostname));
+            printf("PID %d\n", getpid());
+            fflush(stdout);
+            while(ifl==0){
+                sleep(1);
+            }
+        }
     }
 
     MPI_Barrier(MPI_COMM_WORLD);
     //Used only for debugging comment this if not interested
 
-    string requiredParameters[NUMBER_OF_PARAMETERS] = {"-N","-I","-W","-L","-w","-l","-v","-d","-t"};
+    string requiredParameters[NUMBER_OF_PARAMETERS] = {"-N","-I","-W","-L","-w","-l","-v","-d","-t","-D"};
     if(my_rank==0 && cmdOptionExists(argv, argv+argc, "-h"))
     {
         cout << "Usage:\n"
                " - h get help\n"
                " - N number of individuals\n"
                " - I number of individuals that are initially infected\n"
-               " - W, L width and length of the rectangular area where individuals move (in meters)\n"
-               " - w, l width and length of each country (in meters)\n"
-               " - v moving speed for an individual\n"
-               " - d maximum spreading distance (in meters)\n"
-               " - t time step (in seconds)\n"
+               " - W, L width and length of the rectangular area where individuals move (in meters as integer)\n"
+               " - w, l width and length of each country (in meters as integer)\n"
+               " - v moving speed for an individual(in meters per second as float)\n"
+               " - d maximum spreading distance (in meters as float)\n"
+               " - D simulation durations (in days as integer, has to be a multiple of t)\n"
+               " - t time step (in seconds as integer)\n"
+               " - d start debug mode and the value is used to know on which processor to start the debug\n"
                "All these fields are mandatory.\n";
         MPI_Finalize();
         return 0;
     }
     int i;
-    int N,I,W,L,w,l,v,d,t;
+    int N,I,W,L,w,l,v,d,t,D;
     for(i=0;i<NUMBER_OF_PARAMETERS;i++){
         try{
             char * parameter = getCmdOption(argv, argv + argc, requiredParameters[i]);
@@ -108,6 +115,8 @@ int main(int argc, char** argv) {
                     d = atoi(parameter);
                 }else if(requiredParameters[i]=="-t"){
                     t = atoi(parameter);
+                }else if(requiredParameters[i]=="-D"){
+                    D = atoi(parameter);
                 }
             }else{
                 if(my_rank==0)
@@ -119,6 +128,8 @@ int main(int argc, char** argv) {
             cout << "Error with parameter " << requiredParameters[i];
         }
     }
+    //Set a random seed for all the next computation.
+    srand (time(NULL));
 
     //Register the required MPI types. 
     vector<MPI_Datatype> mpi_datatypes;
@@ -142,15 +153,49 @@ int main(int argc, char** argv) {
     //Assign different users to different processor
     vector<Area> processor_areas = getArea(number_of_areas,my_rank,world_size,getStride(W,w));
 
-    //Create the user associated to each processor
-    //TODO later associated user to the various area
-    // map<int,User> process_users;
-    // for(int i : processor_user_IDs){
-    //     Position userPosition(rand(),rand(),v,rand(),rand());
-    //     User newUser(i,userPosition);
-    //     process_users.insert({ i ,newUser});
-    // }
-    // cout << process_users.size();
+    //Create the user associated to each processor(we split the number of user in an equal way for each area
+    //also the infected users are equally).
+    int user_per_area = N / number_of_areas;
+    //Assing an extra user at the first processors, if N is not a multiple of number_of_areas.
+    int user_left_out = N % number_of_areas;
+    if(my_rank<user_left_out) user_per_area++;
+    for(Area &area:processor_areas){
+        int lowerX = w * area.getCol();
+        int lowerY = l * area.getRow();
+        int higherX = lowerX + w;
+        int higherY = lowerY + l;
+        area.setBoundaries(lowerX,lowerY,higherX,higherY);
+        for(int i=0;i<user_per_area;i++){
+            //Generate random coordinates inside this region.
+            int userX,userY;
+            tie(userX,userY) = area.getRadomCoordinates();
+            //Generate a random direction vector.
+            int userDirX,userDirY;
+            tie(userDirX,userDirY) = area.getRadomDirection();
+            Position userPos(userX,userY,v,userDirX,userDirX);
+            //Compute a unique user ID
+            int userID = my_rank * N + i;
+            User newUser(userID, userPos);
+
+            //TODO set randomly infected user
+
+            area.addUser(newUser);
+        }
+    }
+
+    //TODO before starting recompute the infection state of the user.
+    int total_seconds = D * 24 * 60 * 60;
+
+    //Now starts the main loop.
+    for(int elapsedTime = 0; elapsedTime < total_seconds; elapsedTime+=t){
+        //TODO print the status of the state for each country.
+
+        //TODO start by exchaning information about users since you have already started by placing them
+
+        //TODO recompute the users positions
+
+        //TODO update infected state of users.
+    }
 
     MPI_Finalize();
     return 0;
@@ -196,7 +241,7 @@ vector<Area> getArea(int numberOfAreas, int processor_rank, int world_size,int s
             {
                 int neighborAreaCol = neighborStartCol+j;
                 int neighborAreaRow = neighborStartRow+i;
-                if(neighborAreaCol>=0 && neighborAreaRow>=0 && (neighborAreaCol!=get<0>(areaCor) || neighborAreaRow!=get<1>(areaCor))){
+                if(neighborAreaCol>=0 && neighborAreaRow>=0 && neighborAreaCol<stride && neighborAreaRow<numberOfAreas/stride && (neighborAreaCol!=get<0>(areaCor) || neighborAreaRow!=get<1>(areaCor))){
                     int neighborID = neighborAreaCol+neighborAreaRow*stride;
                     int processorArea;
                     if(neighborID<maxAreasForProcessor*(leftOutAreas)){
