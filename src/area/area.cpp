@@ -35,18 +35,26 @@ void Area::resetState(){
     this->outOfAreaUsers.clear();
     this->outOfAreaUsers.clear();
     this->userNearInternalBorders.clear();
+    this->usersNearbyLocal.clear();
 }
 
-void Area::addNearbyUser(User user){
-    this->usersNearby.insert({user.getId(),user});
-}
-
-void Area::recomputePositions(int deltaTime){
+void Area::updateUserPositions(int deltaTime){
     this->resetState();
     for ( auto it = this->usersInArea.begin(); it != this->usersInArea.end(); ++it  )
     {
         it->second.pos.updatePosition(deltaTime);
-        //TODO see if the user has gone out of the area
+        this->sortUser(it->second);
+        //TODO see if the user has gone out of the area sort it in the right queue.
+    } 
+}
+
+void Area::updateUserInfectionStatus(int deltaTime){
+    for ( auto it = this->usersInArea.begin(); it != this->usersInArea.end(); ++it  )
+    {
+        map<int,User> nearbyUser;
+        //TODO computer the nearbyuser
+        it->second.updateUserInfectionState(nearbyUser, deltaTime);
+        //TODO see if the user has gone out of the area sort it in the right queue.
     } 
 }
 
@@ -94,4 +102,20 @@ void Area::setBoundaries(int lowerX, int lowerY, int higherX, int higherY){
     this->lowerY = lowerY;
     this->higherX = higherX; 
     this->higherY = higherY;
+}
+
+void Area::addNearbyUsersRemote(vector<user_struct> nearbyUsersRemote){
+    for(user_struct &nearbyUser:nearbyUsersRemote){
+        this->usersNearbyRemote.insert( { nearbyUser.id , nearbyUser } );
+    }
+}
+
+void Area::addNearbyUsersLocal(vector<User> nearbyUsersLocal){
+    for(User &nearbyUser:nearbyUsersLocal){
+        this->usersNearbyLocal.insert({ nearbyUser.getId() , nearbyUser });
+    }
+}
+
+void Area::printActualState(){
+    //TODO print the stats of this area
 }

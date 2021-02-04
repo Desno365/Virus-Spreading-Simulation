@@ -2,6 +2,14 @@
 
 Position::Position(float x, float y, float vel, float dirX, float dirY):x(x),y(y),vel(vel),dirX(dirX),dirY(dirY){}
 
+Position::Position(position_struct post_t, int vel){
+    this->x = post_t.x;
+    this->y = post_t.y;
+    this->dirX = post_t.dirX;
+    this->dirY = post_t.dirY;
+    this->vel = vel;
+}
+
 void Position::setDirection(float dirX, float dirY){
     this->dirX = dirX;
     this->dirY = dirY;

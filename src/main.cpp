@@ -191,10 +191,18 @@ int main(int argc, char** argv) {
         //TODO print the status of the state for each country.
 
         //TODO start by exchaning information about users since you have already started by placing them
+        //Do the comunication in turn with the gather for each node:
+        //- each node will send to the same node the size of the list with the struct of all the interesting user for that Area
+        //- based on this the receiver che allocate enough memory in the buffer
+        //- at this point each node can send the users structs
+
+        //After this every area has a global vision of the map so it can update the infected status of the user.
+        //TODO update infected state of users.
 
         //TODO recompute the users positions
-
-        //TODO update infected state of users.
+        for(Area &area:processor_areas){
+            area.updateUserPositions(t);
+        }
     }
 
     MPI_Finalize();

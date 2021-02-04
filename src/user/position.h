@@ -25,6 +25,8 @@ class Position : public Serializable<position_struct>
         //y coordinate, the vel velocity of movement of the user,
         //and the component X and Y of the direction vector. 
         Position(float x, float y, float vel, float dirX, float dirY);
+        //Construct a Position instance starting from its struct and the associated velocity.
+        Position(position_struct post_t, int vel);
         //Sets the direction to the vector represented by dirX and dirY.
         void setDirection(float dirX, float dirY);
         //Update the actual value on the Position at each call. It advance of 1 second
