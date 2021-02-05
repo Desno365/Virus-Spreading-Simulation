@@ -128,6 +128,14 @@ int main(int argc, char** argv) {
             cout << "Error with parameter " << requiredParameters[i];
         }
     }
+    //Check that the number of users is greater than the number of indiiduals intially infected.
+    if(N<I){
+        if(my_rank==0)
+            cout << "\nThe number of user has to be greater than the number of individuals intially infected.\n";
+        MPI_Finalize();
+        return -1;
+    }
+
     //Set a random seed for all the next computation.
     srand (time(NULL));
 
@@ -159,12 +167,17 @@ int main(int argc, char** argv) {
     //Assing an extra user at the first processors, if N is not a multiple of number_of_areas.
     int user_left_out = N % number_of_areas;
     if(my_rank<user_left_out) user_per_area++;
+    //Compute the infected users per area.
+    int infected_users_area = I / number_of_areas;
+    int infected_left_out = i % number_of_areas;
+    if(my_rank<infected_left_out) infected_users_area++;
     for(Area &area:processor_areas){
         int lowerX = w * area.getCol();
         int lowerY = l * area.getRow();
         int higherX = lowerX + w;
         int higherY = lowerY + l;
         area.setBoundaries(lowerX,lowerY,higherX,higherY);
+        
         for(int i=0;i<user_per_area;i++){
             //Generate random coordinates inside this region.
             int userX,userY;
@@ -175,11 +188,10 @@ int main(int argc, char** argv) {
             Position userPos(userX,userY,v,userDirX,userDirX);
             //Compute a unique user ID
             int userID = my_rank * N + i;
-            User newUser(userID, userPos);
-
-            //TODO set randomly infected user
-
-            area.addUser(newUser);
+            //Set infected the first generated users per area
+            bool isAlreadyInfected = i<infected_users_area ? true : false;
+            User newUser(userID, userPos, isAlreadyInfected);
+            area.addUser(newUser,d);
         }
     }
 
@@ -195,16 +207,24 @@ int main(int argc, char** argv) {
         //- each node will send to the same node the size of the list with the struct of all the interesting user for that Area
         //- based on this the receiver che allocate enough memory in the buffer
         //- at this point each node can send the users structs
+        //TODO remember to destroy the user_struct that you have received from the previous iteration and that has not been translated into USER,
+        //because each area needs to refresh its global state.
 
         //After this every area has a global vision of the map so it can update the infected status of the user.
-        //TODO update infected state of users.
-
-        //TODO recompute the users positions
         for(Area &area:processor_areas){
-            area.updateUserPositions(t);
+            area.updateUserInfectionStatus(t,d);
+        }
+
+        //Update the position of all the users in the various area.
+        for(Area &area:processor_areas){
+            area.updateUserPositions(t,d);
         }
     }
 
+    //Release space of the areas.
+    for(Area &area:processor_areas){
+        delete &area;
+    }
     MPI_Finalize();
     return 0;
 }
@@ -236,7 +256,7 @@ vector<Area> getArea(int numberOfAreas, int processor_rank, int world_size,int s
         endingAreaID = startingAreaID+minAreasForProcessor;
     }
     for(int i=startingAreaID; i<endingAreaID;i++){
-        Area newArea(i%stride,i/stride);
+        Area newArea(i%stride,i/stride,startingAreaID+i);
         areas.push_back(newArea);
     }
     for(Area &area:areas){
@@ -258,7 +278,8 @@ vector<Area> getArea(int numberOfAreas, int processor_rank, int world_size,int s
                         neighborID-=leftOutAreas*maxAreasForProcessor;
                         processorArea = leftOutAreas + neighborID/minAreasForProcessor;
                     }
-                    NeighborArea neighborArea(processorArea);
+                    //TODO check the value of the neighborID.
+                    NeighborArea neighborArea(processorArea,neighborID);
                     area.setNeighborArea(neighborArea,(Direction)(i*NEIGHBOR_DISTANCE+j));
                 }
             }            

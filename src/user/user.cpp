@@ -1,18 +1,20 @@
 #include "user.h"
+#include <cmath>
 
 //Immune time of the user express as 3(month) * 30(days per month) * 24(hours) * 60(minutes) * 60(seconds)
 #define IMMUNE_TIME 3 * 30 * 24 * 60 * 60 
 //Infected time of the user express as 10(days per month) * 24(hours) * 60(minutes) * 60(seconds)
 #define INFECTED_TIME 10 * 24 * 60 * 60
+//Is the time that a user has to remains close to another infected user in order to become infected, it is 
+//computed as 10(minutes) * 60(seconds)
+#define TIME_NEAR_INFECTED 10 * 60
 
 using namespace std;
 
-User::User(int id, Position position):id(id),pos(position){
-    infected = false;
-}
+User::User(int id, Position &position, bool isAlreadyInfected):id(id),pos(position),infected(isAlreadyInfected){}
 
 
-User::User(user_struct user_t, int vel):pos(user_t.pos_t,vel){
+User::User(user_struct &user_t, int vel):pos(user_t.pos_t,vel){
     this->immuneTime = user_t.immuneTime;
     this->id = user_t.id;
     this->infected = user_t.infected;
@@ -36,7 +38,7 @@ shared_ptr<user_struct> User::getStruct(){
 }
 
 User::~User(){
-
+    delete &this->pos;
 }
 
 MPI_Datatype User::getMPIType(vector<MPI_Datatype> requiredDatatypes){
@@ -94,7 +96,7 @@ void User::updateUserPosition(int deltaTime){
     if(this->infected) this->infectedTime-=deltaTime;
 }
 
-void User::updateUserInfectionState(map<int,User> nearbyUser, int deltaTime){
+void User::updateUserInfectionState(bool isNearAnInfected, int deltaTime){
     if(this->infected){
         this->infectedTime = min( this->infectedTime-deltaTime , 0 );
         if( this->infectedTime == 0 ){
@@ -103,14 +105,21 @@ void User::updateUserInfectionState(map<int,User> nearbyUser, int deltaTime){
         }
     }else if (this->immuneTime>0){
         this->immuneTime = min( this->immuneTime-deltaTime , 0 );
+    }else if(isNearAnInfected){//If is not already infected, is not immune and it is nearby an infected user, that it will increase its time near an infected user
+        this->timeNearInfected+=deltaTime;
+        if(this->timeNearInfected>TIME_NEAR_INFECTED){
+            this->timeNearInfected = 0;
+            this->infected = true;
+            this->infectedTime = INFECTED_TIME;
+        }
+    }else{//If is not near an infected user, and it is not infected or immune, reset its time near an infected user
+        this->timeNearInfected = 0;
     }
-    //TODO checks if the user has been infected and update the nearbyInfectedUser
-
 }
 
-void User::setInfected(bool isInfected){
-    if(!this->infected){
-        this->infected = isInfected;
-        this->infectedTime = INFECTED_TIME;
-    }
+bool User::isNear(int x, int y, int infectionDistance){
+    int distanceX = pos.getX() - x;
+    int distanceY = pos.getY() - y;
+    int distance = sqrt(pow(distanceX,2) + pow(distanceY,2)); 
+    return distance<=infectionDistance ? false : true;
 }

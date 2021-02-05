@@ -11,46 +11,64 @@
 
 using namespace std;
 
+//Is the struct associated to the user used for serialization.
 typedef struct user_struct_t {
+    //Is the id of the user.
     int id;
+    //Is the position struct of the user.
     position_struct pos_t;
+    //Indicates if the user is actually infected.
     bool infected;
+    //Is the remaining immune time of the user
     int immuneTime;
     //Is the infected time if the user if infected otherwise is the time near at least one infected user.
     int timeCounter; 
 } user_struct;
 
+//Represent an agent that can move on the global area.
 class User: public Serializable<user_struct>
 {
     public:
-        User(int id,Position pos);
+    //Construct an instance of a user.
+        User(int id,Position &pos, bool isAlreadyInfected);
         //Create an instance of the user from its struct and the provided velocity.
-        User(user_struct user_t, int vel);
+        //After this the struct is desotryed.
+        User(user_struct &user_t, int vel);
+        //Is the posisiton associated to the user
         Position pos;
         //Updates the position associated to this user.
         void updateUserPosition(int deltaTime);
-        //When the vector with the nearby user is ready, than updates the infection status of the user.
-        //User will infect other users only at the next step.
-        void updateUserInfectionState(map<int,User> nearbyUser, int deltaTime);
+        //It requires the elapsed delta time to update eventually the counter and a boolean that says 
+        //if it is actually near an infected user: this field is discarded if the user is immune or infected.
+        //New infected user will start to infect other users only at the next step.
+        void updateUserInfectionState(bool isNearAnInfected, int deltaTime);
+        //Returns true if the user is infected.
         bool isInfected();
+        //Returns the id of the user.
         int getId();
+        //Destructs this instance of the user.
         ~User();
+        //Returns true if the user is immune.
         bool isImmune();
+        //Returns the struct associated to the user used for serialization.
         shared_ptr<user_struct> getStruct();
         //It returns the datatype that can be used in order to send serialize this object in the struct and send it.
         static MPI_Datatype getMPIType(vector<MPI_Datatype> requiredDatatypes);
+        //Returns true if this user is at a distance that is lower of infection distance w.r.t (x,y).
+        //NOTE: is a <= comparison between the two distances.
+        bool isNear(int x, int y, int infectionDistance);
     private:
+        //The unique id of the user.
         int id;
+        //Indicates id the user is actually infected.
         bool infected;
         //Is the remaining immune time of the user, if 0 the user can be infected.
         int immuneTime;
-        //It is consequtive time spent near at least one infected user,
+        //It is the consecutive time spent near at least one infected user,
         //so it starts from 0 and it goes to 10 days.
         int timeNearInfected;
         //Is the remaining time that the user wiil remain infected, it is arrives to 0 after 10 days.
         int infectedTime;
-        //Sets the user to be infected, if it is not already infected, it doesn't keep track of the near infected user.
-        void setInfected(bool);
     protected:
 };
 

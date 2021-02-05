@@ -36,6 +36,8 @@ class Position : public Serializable<position_struct>
         shared_ptr<position_struct> getStruct();
         //The destructor of the Position class.
         ~Position();
+        int getX(){ return x; }
+        int getY(){ return y; }
         //It returns the datatype that can be used in order to send serialize this object in the struct and send it.
         static MPI_Datatype getMPIType(vector<MPI_Datatype> requiredDatatypes);
     private:
