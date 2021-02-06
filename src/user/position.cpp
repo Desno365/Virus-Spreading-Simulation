@@ -25,12 +25,12 @@ Position::~Position(){
 
 }
 
-shared_ptr<position_struct> Position::getStruct(){
-    shared_ptr<position_struct> pos_t = make_shared<position_struct>();
-    pos_t->x = this->x;
-    pos_t->y = this->y;
-    pos_t->dirX = this->dirX;
-    pos_t->dirY = this->dirY;
+position_struct Position::getStruct(){
+    position_struct pos_t;
+    pos_t.x = this->x;
+    pos_t.y = this->y;
+    pos_t.dirX = this->dirX;
+    pos_t.dirY = this->dirY;
     return pos_t;
 }
 

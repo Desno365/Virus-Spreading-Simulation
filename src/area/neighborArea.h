@@ -9,6 +9,7 @@ class NeighborArea{
         NeighborArea(int processor_rank, int id);
         bool isLocal(int my_processor_rank);
         int getID();
+        int getOtherProcessorRank();
     private:
         int processor_rank;
         int id;

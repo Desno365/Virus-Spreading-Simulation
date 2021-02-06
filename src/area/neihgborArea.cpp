@@ -9,3 +9,7 @@ bool NeighborArea::isLocal(int my_processor_rank){
 int NeighborArea::getID(){
     return id;
 }
+
+int NeighborArea::getOtherProcessorRank(){
+    return processor_rank;
+}

@@ -11,15 +11,19 @@
 
 using namespace std;
 
-User::User(int id, Position &position, bool isAlreadyInfected):id(id),pos(position),infected(isAlreadyInfected){}
+User::User(int id, Position position, bool isAlreadyInfected):id(id),pos(position),infected(isAlreadyInfected){
+    this->updateStruct();
+}
 
 
-User::User(user_struct &user_t, int vel):pos(user_t.pos_t,vel){
-    this->immuneTime = user_t.immuneTime;
-    this->id = user_t.id;
-    this->infected = user_t.infected;
-    this->infectedTime = this->infected ? user_t.timeCounter : 0 ;
-    this->timeNearInfected = !this->infected ? user_t.timeCounter : 0 ;
+User::User(shared_ptr<user_struct> user_t, int vel):pos(user_t->pos_t,vel){
+    this->immuneTime = user_t->immuneTime;
+    this->id = user_t->id;
+    this->infected = user_t->infected;
+    this->infectedTime = this->infected ? user_t->timeCounter : 0 ;
+    this->timeNearInfected = !this->infected ? user_t->timeCounter : 0 ;
+    this->user_saved_struct = user_t;
+    
 }
 
 
@@ -28,13 +32,16 @@ bool User::isInfected(){
 }
 
 shared_ptr<user_struct> User::getStruct(){
-    shared_ptr<user_struct> user_t = make_shared<user_struct>();
-    user_t->id = this->id;
-    user_t->pos_t = *(this->pos.getStruct().get());
-    user_t->infected = this->infected;
-    user_t->immuneTime = this->immuneTime;
-    user_t->timeCounter = this->infected ? this->infectedTime : this->timeNearInfected;
-    return user_t;
+    return user_saved_struct;
+}
+
+void User::updateStruct(){
+    user_saved_struct = make_shared<user_struct>();
+    user_saved_struct->id = this->id;
+    user_saved_struct->pos_t = this->pos.getStruct();
+    user_saved_struct->infected = this->infected;
+    user_saved_struct->immuneTime = this->immuneTime;
+    user_saved_struct->timeCounter = this->infected ? this->infectedTime : this->timeNearInfected;
 }
 
 User::~User(){
@@ -91,9 +98,7 @@ bool User::isImmune(){
 
 void User::updateUserPosition(int deltaTime){
     this->pos.updatePosition(deltaTime);
-    //Update time counter associated to the user.
-    if(this->immuneTime!=0) this->immuneTime-=deltaTime;
-    if(this->infected) this->infectedTime-=deltaTime;
+    this->updateStruct();
 }
 
 void User::updateUserInfectionState(bool isNearAnInfected, int deltaTime){
@@ -121,5 +126,5 @@ bool User::isNear(int x, int y, int infectionDistance){
     int distanceX = pos.getX() - x;
     int distanceY = pos.getY() - y;
     int distance = sqrt(pow(distanceX,2) + pow(distanceY,2)); 
-    return distance<=infectionDistance ? false : true;
+    return distance<=infectionDistance;
 }

@@ -18,7 +18,7 @@ typedef struct position_struct_t {
 } position_struct;
 
 //Represents the position of the user
-class Position : public Serializable<position_struct>
+class Position
 {
     public:
         //Constructor of Position, it requires the x coordinate, the 
@@ -33,7 +33,7 @@ class Position : public Serializable<position_struct>
         //since the time step is alwasy the same.
         void updatePosition(int deltaTime);
         //It returns the struct of a Position that can be used for serialization.
-        shared_ptr<position_struct> getStruct();
+        position_struct getStruct();
         //The destructor of the Position class.
         ~Position();
         int getX(){ return x; }

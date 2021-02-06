@@ -8,18 +8,15 @@
 Area::Area(int col,int row, int id):col(col),row(row),id(id){}
 
 Area::~Area(){
-    for ( auto it = this->usersInArea.begin(); it != this->usersInArea.end(); ++it  )
-    {
-        delete it->second;
-    } 
+    this->resetState();
 }
 
-void Area::addUser(User &user, int infectionDistance){
-    this->usersInArea.insert({user.getId(),&user});
+void Area::addUser(shared_ptr<User> user, int infectionDistance){
+    this->usersInArea.insert({user->getId(), user});
     sortUser(user, infectionDistance);
 }
 
-void Area::setNeighborArea(NeighborArea &neighborArea,Direction direction){
+void Area::setNeighborArea(shared_ptr<NeighborArea> neighborArea,Direction direction){
     this->neighborAreas.insert({direction,neighborArea});
 }
 
@@ -36,32 +33,9 @@ int Area::getRow(){
 }
 
 void Area::resetState(){
-    //Clear the created user struct used to sending information to other regions and delete them.
-    for ( auto it = this->mapOutOfAreasToUsersRemote.begin(); it != this->mapOutOfAreasToUsersRemote.end(); ++it  )
-    {
-        for ( auto it2 = it->second.begin(); it2 != it->second.end(); ++it2 )
-        {
-            delete &it2;
-        } 
-        //Destroy the vector.
-        delete &it->second;
-    } 
-    for ( auto it = this->mapAreasToUsersRemote.begin(); it != this->mapAreasToUsersRemote.end(); ++it  )
-    {
-        for ( auto it2 = it->second.begin(); it2 != it->second.end(); ++it2 )
-        {
-            delete &it2;
-        } 
-        //Destroy the vector.
-        delete &it->second;
-    }
     mapOutOfAreasToUsersRemote.clear();
     mapAreasToUsersRemote.clear();
-
-    //At the end it will contains the user that has been translated into user struct and so can be safely destroyed.
     outOfAreaUsers.clear();
-
-    //Reset the state of the various vector.
     mapOutOfAreasToUsersLocal.clear();
     mapAreasToUsersLocal.clear();
     usersNearbyLocal.clear();
@@ -74,7 +48,7 @@ void Area::updateUserPositions(int deltaTime, int infectionDistance){
     for ( auto it = this->usersInArea.begin(); it != this->usersInArea.end(); ++it  )
     {
         it->second->pos.updatePosition(deltaTime);
-        this->sortUser(*(it->second), infectionDistance);
+        this->sortUser(it->second, infectionDistance);
     } 
 }
 
@@ -116,10 +90,10 @@ void Area::updateUserInfectionStatus(int deltaTime, int infectionDistance){
         usersNearInfected.insert({user.getId(),isNearInfectedUser});
     } 
 
-    //Now updates all the new infected user at once.
-    for(auto it = usersNearInfected.begin(); it != usersNearInfected.end(); ++it){
-        User user = *(usersInArea.at(it->first));
-        user.updateUserInfectionState(it->second,deltaTime);
+    //Now updates all the users at once.
+    for(auto it = usersInArea.begin(); it != usersInArea.end(); ++it){
+        User user = *(it->second.get());
+        user.updateUserInfectionState(usersNearInfected.at(it->first),deltaTime);
     }
 }
 
@@ -138,26 +112,26 @@ tuple<int,int> Area::getRadomDirection(){
     return { (rand() % RAND_MAX_DIRECTION) - (int)RAND_MAX_DIRECTION/2, (rand() % RAND_MAX_DIRECTION) - (int)RAND_MAX_DIRECTION/2 };
 }
 
-map<int,vector<User*>> Area::getOutOfAreaUsersLocal(){
+map<int,vector<shared_ptr<User>>> Area::getOutOfAreaUsersLocal(){
     return mapOutOfAreasToUsersLocal;
 }
 
-map<int,vector<user_struct*>> Area::getOutOfAreaUsersRemote(){
+map<int,vector<shared_ptr<user_struct>>> Area::getOutOfAreaUsersRemote(){
     return mapOutOfAreasToUsersRemote;
 }
 
-map<int,vector<User*>> Area::getNearBorderUsersLocal(){
+map<int,vector<shared_ptr<User>>> Area::getNearBorderUsersLocal(){
     return mapAreasToUsersLocal;
 }
 
-map<int,vector<user_struct*>> Area::getNearBorderUsersRemote(){
+map<int,vector<shared_ptr<user_struct>>> Area::getNearBorderUsersRemote(){
     return mapAreasToUsersRemote;
 }
 
-void Area::sortUser(User &user, int infectionDistance){
-    if(user.pos.getX()<=higherX && user.pos.getX()>=lowerX && user.pos.getY()<=higherY && user.pos.getY()>=lowerY){//The user is still inside the region
-        if(user.pos.getX()>=(higherX-infectionDistance) && user.pos.getX()<=(lowerX+infectionDistance) && user.pos.getY()>=(higherY-infectionDistance) && user.pos.getY()<=(lowerY+infectionDistance))
-            userNearInternalBorders.insert({ user.getId() , &user });
+void Area::sortUser(shared_ptr<User> user, int infectionDistance){
+    if(user->pos.getX()<=higherX && user->pos.getX()>=lowerX && user->pos.getY()<=higherY && user->pos.getY()>=lowerY){//The user is still inside the region
+        if(user->pos.getX()>=(higherX-infectionDistance) && user->pos.getX()<=(lowerX+infectionDistance) && user->pos.getY()>=(higherY-infectionDistance) && user->pos.getY()<=(lowerY+infectionDistance))
+            userNearInternalBorders.insert({ user->getId() , user });
     }else{//The user has gone too faraway
         outOfAreaUsers.push_back(user);
     }
@@ -170,18 +144,16 @@ void Area::setBoundaries(int lowerX, int lowerY, int higherX, int higherY){
     this->higherY = higherY;
 }
 
-void Area::addNearbyUsersRemote(vector<user_struct*> &nearbyUsersRemote){
-    for(user_struct *nearbyUser:nearbyUsersRemote){
+void Area::addNearbyUsersRemote(vector<shared_ptr<user_struct>> nearbyUsersRemote){
+    for(shared_ptr<user_struct> nearbyUser:nearbyUsersRemote){
         this->usersNearbyRemote.insert( { nearbyUser->id , nearbyUser } );
     }
-    delete &nearbyUsersRemote;
 }
 
-void Area::addNearbyUsersLocal(vector<User*> &nearbyUsersLocal){
-    for(User * nearbyUser:nearbyUsersLocal){
+void Area::addNearbyUsersLocal(vector<shared_ptr<User>> nearbyUsersLocal){
+    for(shared_ptr<User> nearbyUser:nearbyUsersLocal){
         this->usersNearbyLocal.insert({ nearbyUser->getId() , nearbyUser });
     }
-    delete &nearbyUsersLocal;
 }
 
 void Area::printActualState(){
@@ -192,38 +164,95 @@ void Area::computeNearBorderUserMap(int infectedDistance, int my_processor_rank)
     //Check the various user based on the border to which they are near.
     //NOTE: we check only the users inside userNearInternalBorders since it has been updated after the recompute position.
     for(auto entriesUsersInternalNearBorder = userNearInternalBorders.begin(); entriesUsersInternalNearBorder != userNearInternalBorders.end(); ++entriesUsersInternalNearBorder){
-        User user = *(entriesUsersInternalNearBorder->second);
+        shared_ptr<User> user = entriesUsersInternalNearBorder->second;
         //Do this computation only if the user is infected.
-        if(user.isInfected()){
-            if(user.pos.getX() >= (lowerX - infectedDistance)){
+        if(user->isInfected()){
+            if(user->pos.getX() <= (lowerX + infectedDistance)){
                 //Check West
                 if(neighborAreas.count(West)>0)
-                    addUserNear(user,neighborAreas.at(West),my_processor_rank);
+                    addUserNear(user,neighborAreas.at(West).get(),my_processor_rank);
                 //Check North-West and also North
-                if(user.pos.getY()<=(higherY-infectedDistance)){
+                if(user->pos.getY()>=(higherY-infectedDistance)){
                     //Check North-West
                     if(neighborAreas.count(NorthWest)>0)
-                        addUserNear(user,neighborAreas.at(NorthWest),my_processor_rank);
+                        addUserNear(user,neighborAreas.at(NorthWest).get(),my_processor_rank);
                     //Check North
                     if(neighborAreas.count(North)>0)
-                        addUserNear(user,neighborAreas.at(North),my_processor_rank);
-                }else if(user.pos.getY()){
-                    
+                        addUserNear(user, neighborAreas.at(North).get(),my_processor_rank);
+                }else if(user->pos.getY()<=(lowerY+infectedDistance)){ //Check South and South-West
+                    //Check South-West
+                    if(neighborAreas.count(SouthWest)>0)
+                        addUserNear(user,neighborAreas.at(SouthWest).get(),my_processor_rank);
+                    //Check South
+                    if(neighborAreas.count(South)>0)
+                        addUserNear(user, neighborAreas.at(South).get(),my_processor_rank);
                 }
-
+            }else if(user->pos.getX()>=(higherX-infectedDistance)){
+                //Check East
+                if(neighborAreas.count(East)>0)
+                    addUserNear(user,neighborAreas.at(East).get(),my_processor_rank);
+                //Check North-East and also North
+                if(user->pos.getY()>=(higherY-infectedDistance)){
+                    //Check North-East
+                    if(neighborAreas.count(NorthEast)>0)
+                        addUserNear(user,neighborAreas.at(NorthEast).get(),my_processor_rank);
+                    //Check North
+                    if(neighborAreas.count(North)>0)
+                        addUserNear(user, neighborAreas.at(North).get(),my_processor_rank);
+                }else if(user->pos.getY()<=(lowerY+infectedDistance)){ //Check South and South-East
+                    //Check South-East
+                    if(neighborAreas.count(SouthEast)>0)
+                        addUserNear(user,neighborAreas.at(SouthEast).get(),my_processor_rank);
+                    //Check South
+                    if(neighborAreas.count(South)>0)
+                        addUserNear(user, neighborAreas.at(South).get(),my_processor_rank);
+                }     
+            }else if(user->pos.getY()>=(higherX-infectedDistance)){
+                //Since we have previously check this has to be sent only to north.
+                //Check North
+                if(neighborAreas.count(North)>0)
+                    addUserNear(user, neighborAreas.at(North).get(),my_processor_rank);
+            }else if(user->pos.getY()<=(lowerY+infectedDistance)){
+                //Since we have previously check this has to be sent only to south.
+                //Check South
+                if(neighborAreas.count(South)>0)
+                    addUserNear(user, neighborAreas.at(South).get(),my_processor_rank);
             }
         }
     }
 }
 
-//NOTE: there can ne duplicated in the vector going to a remote location, locally instead we send information to the same areas, so no problem.
-//NOTE: check the users behavior for the other processor global staet when they are sent remotly.
-void Area::addUserNear(User &user,  NeighborArea neighborArea, int my_processor_rank){
-    if(neighborArea.isLocal(my_processor_rank)){
-        vector<User> users;
-        // if(mapAreasToUsersLocal.count(neighborArea.getID())) users = neighborAreas.at(neighborArea.getID());
-        // else users = new vector<User>;
-        //TODO finish here
+//NOTE: locally the user in the list cannot be reapted. Instead we need to check for remote destination.
+void Area::addUserNear(shared_ptr<User> user,  NeighborArea *neighborArea, int my_processor_rank){
+    if(neighborArea->isLocal(my_processor_rank)){
+        vector<shared_ptr<User>> * users;
+        if(mapAreasToUsersLocal.count(neighborArea->getID())) users = &(mapAreasToUsersLocal.at(neighborArea->getID()));
+        else{
+            //No entries is already present so we insert such a vector.
+            users = new vector<shared_ptr<User>>;
+            mapAreasToUsersLocal.insert({neighborArea->getID(), *users});
+        }
+        users->push_back(user);
+    }else{
+        //We have to send the information remotly.
+        vector<shared_ptr<user_struct>> * users_t;
+        if(mapAreasToUsersRemote.count(neighborArea->getID())) users_t = &(mapAreasToUsersRemote.at(neighborArea->getID()));
+        else{
+            //No entries is already present so we insert such a vector.
+            users_t = new vector<shared_ptr<user_struct>>;
+            mapAreasToUsersRemote.insert({neighborArea->getID(), *users_t});
+        }
+        bool isAlreadyPresent = false;
+        for(auto it = users_t->begin(); it != users_t->end() && !isAlreadyPresent; ++it){
+            shared_ptr<user_struct> user_t = *it;
+            if(user_t->id==user->getId())
+                isAlreadyPresent = true;
+        }
+        if(!isAlreadyPresent){
+            //If no user_struct with the same id is present than we can insert a new user_struct.
+            shared_ptr<user_struct> user_t = user->getStruct();
+            users_t->push_back(user_t);
+        }
     }
 }
 

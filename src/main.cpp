@@ -43,7 +43,7 @@ int getNumberOfAreas(int W,int L, int w,int l);
 int getStride(int W,int w);
 
 //Returns the vector of Area associated to the provided processor_rank.
-vector<Area> getArea(int numberOfAreas, int processor_rank, int world_size,int stride);
+vector<shared_ptr<Area>> getArea(int numberOfAreas, int processor_rank, int world_size,int stride);
 
 int main(int argc, char** argv) {
 
@@ -159,7 +159,7 @@ int main(int argc, char** argv) {
     }
 
     //Assign different users to different processor
-    vector<Area> processor_areas = getArea(number_of_areas,my_rank,world_size,getStride(W,w));
+    vector<shared_ptr<Area>> processor_areas = getArea(number_of_areas,my_rank,world_size,getStride(W,w));
 
     //Create the user associated to each processor(we split the number of user in an equal way for each area
     //also the infected users are equally).
@@ -171,27 +171,27 @@ int main(int argc, char** argv) {
     int infected_users_area = I / number_of_areas;
     int infected_left_out = i % number_of_areas;
     if(my_rank<infected_left_out) infected_users_area++;
-    for(Area &area:processor_areas){
-        int lowerX = w * area.getCol();
-        int lowerY = l * area.getRow();
+    for(shared_ptr<Area> area:processor_areas){
+        int lowerX = w * area->getCol();
+        int lowerY = l * area->getRow();
         int higherX = lowerX + w;
         int higherY = lowerY + l;
-        area.setBoundaries(lowerX,lowerY,higherX,higherY);
+        area->setBoundaries(lowerX,lowerY,higherX,higherY);
         
         for(int i=0;i<user_per_area;i++){
             //Generate random coordinates inside this region.
             int userX,userY;
-            tie(userX,userY) = area.getRadomCoordinates();
+            tie(userX,userY) = area->getRadomCoordinates();
             //Generate a random direction vector.
             int userDirX,userDirY;
-            tie(userDirX,userDirY) = area.getRadomDirection();
+            tie(userDirX,userDirY) = area->getRadomDirection();
             Position userPos(userX,userY,v,userDirX,userDirX);
             //Compute a unique user ID
             int userID = my_rank * N + i;
             //Set infected the first generated users per area
             bool isAlreadyInfected = i<infected_users_area ? true : false;
-            User newUser(userID, userPos, isAlreadyInfected);
-            area.addUser(newUser,d);
+            shared_ptr<User> newUser = make_shared<User>(userID, userPos, isAlreadyInfected);
+            area->addUser(newUser,d);
         }
     }
 
@@ -200,31 +200,32 @@ int main(int argc, char** argv) {
 
     //Now starts the main loop.
     for(int elapsedTime = 0; elapsedTime < total_seconds; elapsedTime+=t){
-        //TODO print the status of the state for each country.
+        if (true){    //TODO print only the status only every day.                
+            for(shared_ptr<Area> area:processor_areas){
+                area->printActualState();
+            }
+        }
 
         //TODO start by exchaning information about users since you have already started by placing them
         //Do the comunication in turn with the gather for each node:
         //- each node will send to the same node the size of the list with the struct of all the interesting user for that Area
         //- based on this the receiver che allocate enough memory in the buffer
         //- at this point each node can send the users structs
-        //TODO remember to destroy the user_struct that you have received from the previous iteration and that has not been translated into USER,
-        //because each area needs to refresh its global state.
+        //Thi is repeated two times:
+        //- In the first part the user out of area are moved,
+        //- The when everything is up to date we move the user struct for updating the global state
 
         //After this every area has a global vision of the map so it can update the infected status of the user.
-        for(Area &area:processor_areas){
-            area.updateUserInfectionStatus(t,d);
+        for(shared_ptr<Area> area:processor_areas){
+            area->updateUserInfectionStatus(t,d);
         }
 
         //Update the position of all the users in the various area.
-        for(Area &area:processor_areas){
-            area.updateUserPositions(t,d);
+        for(shared_ptr<Area> &area:processor_areas){
+            area->updateUserPositions(t,d);
         }
     }
 
-    //Release space of the areas.
-    for(Area &area:processor_areas){
-        delete &area;
-    }
     MPI_Finalize();
     return 0;
 }
@@ -242,8 +243,8 @@ int getStride(int W,int w){
 }
 
 //NOTE: the ids of the areas are assigned from left to right, top to bottom in increasing order.
-vector<Area> getArea(int numberOfAreas, int processor_rank, int world_size,int stride){
-    vector<Area> areas;
+vector<shared_ptr<Area>> getArea(int numberOfAreas, int processor_rank, int world_size,int stride){
+    vector<shared_ptr<Area>> areas;
     int minAreasForProcessor = numberOfAreas / world_size;
     int maxAreasForProcessor = numberOfAreas % world_size == 0 ? minAreasForProcessor : minAreasForProcessor + 1;
     int leftOutAreas = numberOfAreas % world_size;
@@ -256,11 +257,11 @@ vector<Area> getArea(int numberOfAreas, int processor_rank, int world_size,int s
         endingAreaID = startingAreaID+minAreasForProcessor;
     }
     for(int i=startingAreaID; i<endingAreaID;i++){
-        Area newArea(i%stride,i/stride,startingAreaID+i);
+        shared_ptr<Area> newArea = make_shared<Area>(i%stride,i/stride,startingAreaID+i);
         areas.push_back(newArea);
     }
-    for(Area &area:areas){
-        tuple<int,int> areaCor = area.getCoordinate();
+    for(shared_ptr<Area> area:areas){
+        tuple<int,int> areaCor = area->getCoordinate();
         int neighborStartCol = get<0>(areaCor)-(int)(NEIGHBOR_DISTANCE/2);
         int neighborStartRow = get<1>(areaCor)-(int)(NEIGHBOR_DISTANCE/2);
         //Starts from the top and go down to the right
@@ -279,8 +280,8 @@ vector<Area> getArea(int numberOfAreas, int processor_rank, int world_size,int s
                         processorArea = leftOutAreas + neighborID/minAreasForProcessor;
                     }
                     //TODO check the value of the neighborID.
-                    NeighborArea neighborArea(processorArea,neighborID);
-                    area.setNeighborArea(neighborArea,(Direction)(i*NEIGHBOR_DISTANCE+j));
+                    shared_ptr<NeighborArea> neighborArea = make_shared<NeighborArea>(processorArea,neighborID);
+                    area->setNeighborArea(neighborArea,(Direction)(i*NEIGHBOR_DISTANCE+j));
                 }
             }            
         }

@@ -30,10 +30,10 @@ class User: public Serializable<user_struct>
 {
     public:
     //Construct an instance of a user.
-        User(int id,Position &pos, bool isAlreadyInfected);
+        User(int id,Position pos, bool isAlreadyInfected);
         //Create an instance of the user from its struct and the provided velocity.
         //After this the struct is desotryed.
-        User(user_struct &user_t, int vel);
+        User(shared_ptr<user_struct> user_t, int vel);
         //Is the posisiton associated to the user
         Position pos;
         //Updates the position associated to this user.
@@ -69,6 +69,12 @@ class User: public Serializable<user_struct>
         int timeNearInfected;
         //Is the remaining time that the user wiil remain infected, it is arrives to 0 after 10 days.
         int infectedTime;
+        //Is the user_struct associated to this user recompute every time the position is updated.
+        shared_ptr<user_struct> user_saved_struct;
+        //Update the struct associated to this user.
+        //NOTE: at the moment the shared pointer is substituted, so all the previous reference are not update with the new
+        //values.
+        void updateStruct();
     protected:
 };
 
