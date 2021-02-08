@@ -30,3 +30,6 @@ compile-test:
 
 run-test:
 	./test.o --success
+
+test:
+	mpic++ ${CFLAGS} -o ./test.o ./test/test.cpp ${REQUIRED} && ./test.o --success

@@ -3,22 +3,133 @@
 #include "./../src/user/user.h"
 
 // 1) Install Catch2 (it can be installed for example through homebrew with the command "brew install catch2");
-// 2) Run the following command: g++ -std=c++11 -I./src -Wall -o ./test.0 ./test/test.cpp && ./test.0 --success
+// 2) Run the following command: make test -B
 
-static int Factorial( int number ) {
-    return number <= 1 ? number : Factorial( number - 1 ) * number;  // fail
-    // return number <= 1 ? 1      : Factorial( number - 1 ) * number;  // pass
-}
+TEST_CASE("User") {
 
-TEST_CASE( "User isNear" ) {
-    shared_ptr<Position> userPos = make_shared<Position>(1,1,1,1,1);
-    shared_ptr<User> newUser = make_shared<User>(0, userPos, false);
-    REQUIRE( newUser->isNear(2, 2, 1000000) == true );
-}
+    SECTION("updateUserInfectionState") {
+        // Create user not infected.
+        shared_ptr<Position> userPos = make_shared<Position>(0,0,1,0,0);
+        shared_ptr<User> newUser = make_shared<User>(0, userPos, false);
+        REQUIRE( newUser->isInfected() == false );
+        REQUIRE( newUser->isImmune() == false );
 
-TEST_CASE( "Factorials of 1 and higher are computed (pass)", "[single-file]" ) {
-    REQUIRE( Factorial(1) == 1 );
-    REQUIRE( Factorial(2) == 2 );
-    REQUIRE( Factorial(3) == 6 );
-    REQUIRE( Factorial(10) == 3628800 );
+        // User alone.
+        newUser->updateUserInfectionState(false, 1);
+        REQUIRE( newUser->isInfected() == false );
+        REQUIRE( newUser->isImmune() == false );
+
+        // User near infected for a short time.
+        newUser->updateUserInfectionState(true, 500);
+        REQUIRE( newUser->isInfected() == false );
+        REQUIRE( newUser->isImmune() == false );
+
+        // User alone.
+        newUser->updateUserInfectionState(false, 1);
+        REQUIRE( newUser->isInfected() == false );
+        REQUIRE( newUser->isImmune() == false );
+
+        // User near infected for a short time.
+        newUser->updateUserInfectionState(true, 500);
+        REQUIRE( newUser->isInfected() == false );
+        REQUIRE( newUser->isImmune() == false );
+
+        // User still near infected, should become infected (surpassed TIME_NEAR_INFECTED 600).
+        newUser->updateUserInfectionState(true, 200);
+        REQUIRE( newUser->isInfected() == true );
+        REQUIRE( newUser->isImmune() == false );
+
+        // User still near infected, should remain infected.
+        newUser->updateUserInfectionState(true, 1);
+        REQUIRE( newUser->isInfected() == true );
+        REQUIRE( newUser->isImmune() == false );
+
+        // User not near infected, should remain infected.
+        newUser->updateUserInfectionState(false, 1);
+        REQUIRE( newUser->isInfected() == true );
+        REQUIRE( newUser->isImmune() == false );
+
+        // User not near infected for a long period, should become immune (surpassed INFECTED_TIME 864000).
+        newUser->updateUserInfectionState(false, 864999);
+        REQUIRE( newUser->isInfected() == false );
+        REQUIRE( newUser->isImmune() == true );
+
+        // User not near infected, should remain immune.
+        newUser->updateUserInfectionState(false, 100);
+        REQUIRE( newUser->isInfected() == false );
+        REQUIRE( newUser->isImmune() == true );
+
+        // User near infected for a long time, should remain immune (surpassed TIME_NEAR_INFECTED 600).
+        newUser->updateUserInfectionState(true, 650);
+        REQUIRE( newUser->isInfected() == false );
+        REQUIRE( newUser->isImmune() == true );
+
+        // User not near infected for a very long time, should stop being immune (surpassed IMMUNE_TIME 7776000).
+        newUser->updateUserInfectionState(false, 7776999);
+        REQUIRE( newUser->isInfected() == false );
+        REQUIRE( newUser->isImmune() == false );
+
+        // User alone.
+        newUser->updateUserInfectionState(false, 1);
+        REQUIRE( newUser->isInfected() == false );
+        REQUIRE( newUser->isImmune() == false );
+
+        // User near infected for a short time.
+        newUser->updateUserInfectionState(true, 500);
+        REQUIRE( newUser->isInfected() == false );
+        REQUIRE( newUser->isImmune() == false );
+
+        // User alone.
+        newUser->updateUserInfectionState(false, 1);
+        REQUIRE( newUser->isInfected() == false );
+        REQUIRE( newUser->isImmune() == false );
+
+        // User near infected for a long time (surpassed TIME_NEAR_INFECTED 600).
+        newUser->updateUserInfectionState(true, 699);
+        REQUIRE( newUser->isInfected() == true );
+        REQUIRE( newUser->isImmune() == false );
+    }
+
+    SECTION("isNear true") {
+        shared_ptr<Position> userPos = make_shared<Position>(0,0,1,1,0);
+        shared_ptr<User> newUser = make_shared<User>(0, userPos, false);
+        REQUIRE( newUser->isNear(5, 5, 8) == true );
+        REQUIRE( newUser->isNear(-5, -5, 8) == true );
+    }
+    SECTION("isNear false") {
+        shared_ptr<Position> userPos = make_shared<Position>(0,0,1,1,0);
+        shared_ptr<User> newUser = make_shared<User>(0, userPos, false);
+        REQUIRE( newUser->isNear(5, 5, 7) == false );
+        REQUIRE( newUser->isNear(-5, -5, 7) == false );
+    }
+
+    SECTION("updateUserPosition and getStruct") {
+        // Initialize user1.
+        shared_ptr<Position> userPos1 = make_shared<Position>(0,0,1,1,0);
+        shared_ptr<User> newUser1 = make_shared<User>(0, userPos1, false);
+
+        // Update user1 position.
+        newUser1->updateUserPosition(2);
+        REQUIRE( newUser1->getStruct()->x == 2 );
+        REQUIRE( newUser1->getStruct()->y == 0 );
+
+        // Update user1 position.
+        newUser1->updateUserPosition(2);
+        REQUIRE( newUser1->getStruct()->x == 4 );
+        REQUIRE( newUser1->getStruct()->y == 0 );
+
+        // Initialize user2.
+        shared_ptr<Position> userPos2 = make_shared<Position>(0,0,1,0,1);
+        shared_ptr<User> newUser2 = make_shared<User>(0, userPos2, false);
+
+        // Update user2 position.
+        newUser2->updateUserPosition(1);
+        REQUIRE( newUser2->getStruct()->x == 0 );
+        REQUIRE( newUser2->getStruct()->y == 1 );
+
+        // Update user2 position.
+        newUser2->updateUserPosition(1);
+        REQUIRE( newUser2->getStruct()->x == 0 );
+        REQUIRE( newUser2->getStruct()->y == 2 );
+    }
 }
