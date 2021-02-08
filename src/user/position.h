@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <vector>
 #include <tuple>
-#include "serializable.h"
+#include <mpi.h>
 
 using namespace std;
 
@@ -23,13 +23,13 @@ class Position
         //since the time step is alwasy the same.
         void updatePosition(int deltaTime);
         //Returns X.
-        int getX() { return x; };
+        float getX() { return x; };
         //Returns Y.
-        int getY() { return y; };
+        float getY() { return y; };
         //Returns a tuple with (X,Y);
-        tuple<int,int> getCoordinates();
+        tuple<float,float> getCoordinates();
         //Returns a tuple with (dirX,dirY).
-        tuple<int,int> getDirections();
+        tuple<float,float> getDirections();
     private:
         //x and y coordinates of the position.
         float x,y{0};

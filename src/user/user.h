@@ -6,8 +6,8 @@
 #include <vector>
 #include <memory>
 #include <map>
+#include <mpi.h>
 #include "position.h"
-#include "serializable.h"
 
 using namespace std;
 
@@ -32,8 +32,8 @@ class User
         //Construct an instance of a user.
         User(int id,shared_ptr<Position> pos, bool isAlreadyInfected);
         //Create an instance of the user from its struct and the provided velocity.
-        //After this the struct is desotryed.
-        User(shared_ptr<user_struct> user_t, int vel);
+        //After this the struct is destroyed.
+        User(shared_ptr<user_struct> user_t, float vel);
         //Is the posisiton associated to the user
         shared_ptr<Position> pos;
         //Updates the position associated to this user.
@@ -56,7 +56,7 @@ class User
         static MPI_Datatype getMPIType();
         //Returns true if this user is at a distance that is lower of infection distance w.r.t (x,y).
         //NOTE: is a <= comparison between the two distances.
-        bool isNear(int x, int y, int infectionDistance);
+        bool isNear(float x, float y, float infectionDistance);
     private:
         //The unique id of the user.
         int id;

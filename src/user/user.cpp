@@ -13,10 +13,14 @@ using namespace std;
 
 User::User(int id, shared_ptr<Position> position, bool isAlreadyInfected):id(id),pos(position),infected(isAlreadyInfected){
     this->updateStruct();
+    this->infected = false;
+    this->immuneTime = 0;
+    this->timeNearInfected = 0;
+    this->infectedTime = 0;
 }
 
 
-User::User(shared_ptr<user_struct> user_t, int vel){
+User::User(shared_ptr<user_struct> user_t, float vel){
     this->pos = make_shared<Position>(user_t->x,user_t->y,vel,user_t->dirX,user_t->dirY);
     this->immuneTime = user_t->immuneTime;
     this->id = user_t->id;
@@ -118,13 +122,13 @@ void User::updateUserPosition(int deltaTime){
 
 void User::updateUserInfectionState(bool isNearAnInfected, int deltaTime){
     if(this->infected){
-        this->infectedTime = min( this->infectedTime-deltaTime , 0 );
+        this->infectedTime = max( this->infectedTime-deltaTime , 0 );
         if( this->infectedTime == 0 ){
             this->infected = false;
             this->immuneTime = IMMUNE_TIME;
         }
     }else if (this->immuneTime>0){
-        this->immuneTime = min( this->immuneTime-deltaTime , 0 );
+        this->immuneTime = max( this->immuneTime-deltaTime , 0 );
     }else if(isNearAnInfected){//If is not already infected, is not immune and it is nearby an infected user, that it will increase its time near an infected user
         this->timeNearInfected+=deltaTime;
         if(this->timeNearInfected>TIME_NEAR_INFECTED){
@@ -137,9 +141,9 @@ void User::updateUserInfectionState(bool isNearAnInfected, int deltaTime){
     }
 }
 
-bool User::isNear(int x, int y, int infectionDistance){
-    int distanceX = pos->getX() - x;
-    int distanceY = pos->getY() - y;
-    int distance = sqrt(pow(distanceX,2) + pow(distanceY,2)); 
+bool User::isNear(float x, float y, float infectionDistance){
+    float distanceX = pos->getX() - x;
+    float distanceY = pos->getY() - y;
+    float distance = sqrt(pow(distanceX,2) + pow(distanceY,2)); 
     return distance<=infectionDistance;
 }

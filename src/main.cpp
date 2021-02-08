@@ -95,7 +95,8 @@ int main(int argc, char** argv) {
         return 0;
     }
     int i;
-    int N,I,W,L,w,l,v,d,t,D;
+    int N,I,W,L,w,l,t,D;
+    float v,d;
     for(i=0;i<NUMBER_OF_PARAMETERS;i++){
         try{
             char * parameter = getCmdOption(argv, argv + argc, requiredParameters[i]);
@@ -113,9 +114,9 @@ int main(int argc, char** argv) {
                 }else if(requiredParameters[i]=="-l"){
                     l = atoi(parameter);
                 }else if(requiredParameters[i]=="-v"){
-                    v = atoi(parameter);
+                    v = atof(parameter);
                 }else if(requiredParameters[i]=="-d"){
-                    d = atoi(parameter);
+                    d = atof(parameter);
                 }else if(requiredParameters[i]=="-t"){
                     t = atoi(parameter);
                 }else if(requiredParameters[i]=="-D"){
@@ -237,14 +238,14 @@ int main(int argc, char** argv) {
         //- The when everything is up to date we move the user struct for updating the global state
 
         //After this every area has a global vision of the map so it can update the infected status of the user.
-        // for(shared_ptr<Area> area:processor_areas){
-        //     area->updateUserInfectionStatus(t,d);
-        // }
+        for(shared_ptr<Area> area:processor_areas){
+            area->updateUserInfectionStatus(t,d);
+        }
 
-        // //Update the position of all the users in the various area.
-        // for(shared_ptr<Area> &area:processor_areas){
-        //     area->updateUserPositions(t,d);
-        // }
+        //Update the position of all the users in the various area.
+        for(shared_ptr<Area> &area:processor_areas){
+            area->updateUserPositions(t,d);
+        }
     }
 
     //Print the state at the end of the computation.

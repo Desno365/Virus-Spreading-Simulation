@@ -13,10 +13,10 @@ void Position::updatePosition(int deltaTime){
     this->y += deltaTime * this->vel * dirY;
 }
 
-tuple<int,int> Position::getCoordinates(){
+tuple<float,float> Position::getCoordinates(){
     return {x,y};
 }
 
-tuple<int,int> Position::getDirections(){
+tuple<float,float> Position::getDirections(){
     return {dirX,dirY};
 }
