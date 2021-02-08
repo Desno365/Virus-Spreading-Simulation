@@ -1,5 +1,6 @@
 import argparse
 from pwn import *
+import sys
 # NOTE: if you want to debug another process change the DEBUG option in the Makefile
 # NOTE: you can stop execution in the main method with:(use the DEBUGGED PROCESSOR value in which you are interested in)
 # if(my_rank==0) asm("int $3");   
@@ -14,8 +15,14 @@ context.terminal = ["terminator", "-e"]
 
 
 # # Make the program
-# r = process("make -B",shell=True)
-# r.wait_for_close()
+r = process("make -B",shell=True)
+print("receving line")
+makeOutput = r.recvall().decode("utf-8")
+r.wait_for_close()
+
+if "error" in makeOutput:
+    print(makeOutput)
+    sys.exit("Cannot compile")
 
 # Get the pid of the process to attach from the arguments of the program.
 # parser = argparse.ArgumentParser()
@@ -26,14 +33,14 @@ context.terminal = ["terminator", "-e"]
 r = process("make debug",shell=True)
 r.recvuntil("PID ")
 pid = int(r.recvuntil("\n")[:-1])
-print(pid)
 
 # Attach GDB to the program, here you can specify the instructions that gbd has to execute before
 # returning the control.
 # NOTE: the first break has always to coincide with the address of the sleep.
 gdb.attach(pid, """
-    break main.cpp:70
-    break main.cpp:313
+    break main.cpp:71
+    break main.cpp:314
+    break main.cpp:290
     c
     set var ifl =7
     c

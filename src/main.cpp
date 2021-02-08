@@ -238,14 +238,14 @@ int main(int argc, char** argv) {
         //- The when everything is up to date we move the user struct for updating the global state
 
         //After this every area has a global vision of the map so it can update the infected status of the user.
-        for(shared_ptr<Area> area:processor_areas){
-            area->updateUserInfectionStatus(t,d);
-        }
+        // for(shared_ptr<Area> area:processor_areas){
+        //     area->updateUserInfectionStatus(t,d);
+        // }
 
-        //Update the position of all the users in the various area.
-        for(shared_ptr<Area> &area:processor_areas){
-            area->updateUserPositions(t,d);
-        }
+        // //Update the position of all the users in the various area.
+        // for(shared_ptr<Area> &area:processor_areas){
+        //     area->updateUserPositions(t,d);
+        // }
     }
 
     //Print the state at the end of the computation.
@@ -287,7 +287,7 @@ vector<shared_ptr<Area>> getArea(int numberOfAreas, int processor_rank, int worl
         endingAreaID = startingAreaID+minAreasForProcessor;
     }
     for(int i=startingAreaID; i<endingAreaID;i++){
-        shared_ptr<Area> newArea = make_shared<Area>(i%stride,i/stride,startingAreaID+i);
+        shared_ptr<Area> newArea = make_shared<Area>(i%stride,i/stride,i);
         areas.push_back(newArea);
     }
     for(shared_ptr<Area> area:areas){
