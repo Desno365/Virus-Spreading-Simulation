@@ -30,10 +30,10 @@ print(pid)
 
 # Attach GDB to the program, here you can specify the instructions that gbd has to execute before
 # returning the control.
+# NOTE: the first break has always to coincide with the address of the sleep.
 gdb.attach(pid, """
-    break main.cpp:68
-    break main.cpp:169
-    break main.cpp:175
+    break main.cpp:70
+    break main.cpp:313
     c
     set var ifl =7
     c

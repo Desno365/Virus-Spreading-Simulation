@@ -16,7 +16,7 @@ typedef struct user_struct_t {
     //Is the id of the user.
     int id;
     //Is the position struct of the user.
-    position_struct pos_t;
+    int x,y,dirX,dirY;
     //Indicates if the user is actually infected.
     bool infected;
     //Is the remaining immune time of the user
@@ -26,16 +26,16 @@ typedef struct user_struct_t {
 } user_struct;
 
 //Represent an agent that can move on the global area.
-class User: public Serializable<user_struct>
+class User
 {
     public:
-    //Construct an instance of a user.
-        User(int id,Position pos, bool isAlreadyInfected);
+        //Construct an instance of a user.
+        User(int id,shared_ptr<Position> pos, bool isAlreadyInfected);
         //Create an instance of the user from its struct and the provided velocity.
         //After this the struct is desotryed.
         User(shared_ptr<user_struct> user_t, int vel);
         //Is the posisiton associated to the user
-        Position pos;
+        shared_ptr<Position> pos;
         //Updates the position associated to this user.
         void updateUserPosition(int deltaTime);
         //It requires the elapsed delta time to update eventually the counter and a boolean that says 
@@ -53,7 +53,7 @@ class User: public Serializable<user_struct>
         //Returns the struct associated to the user used for serialization.
         shared_ptr<user_struct> getStruct();
         //It returns the datatype that can be used in order to send serialize this object in the struct and send it.
-        static MPI_Datatype getMPIType(vector<MPI_Datatype> requiredDatatypes);
+        static MPI_Datatype getMPIType();
         //Returns true if this user is at a distance that is lower of infection distance w.r.t (x,y).
         //NOTE: is a <= comparison between the two distances.
         bool isNear(int x, int y, int infectionDistance);

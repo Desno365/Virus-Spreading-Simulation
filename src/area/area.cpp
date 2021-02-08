@@ -1,4 +1,6 @@
 #include <stdlib.h> 
+#include <sstream>
+#include <stdio.h>
 
 #include "area.h"
 
@@ -47,7 +49,7 @@ void Area::updateUserPositions(int deltaTime, int infectionDistance){
     this->resetState();
     for ( auto it = this->usersInArea.begin(); it != this->usersInArea.end(); ++it  )
     {
-        it->second->pos.updatePosition(deltaTime);
+        it->second->pos->updatePosition(deltaTime);
         this->sortUser(it->second, infectionDistance);
     } 
 }
@@ -55,22 +57,22 @@ void Area::updateUserPositions(int deltaTime, int infectionDistance){
 void Area::updateUserInfectionStatus(int deltaTime, int infectionDistance){
     map<int,bool> usersNearInfected;
     for(auto it = this->usersInArea.begin(); it != this->usersInArea.end(); ++it){
-        User user = *(it->second);
+        shared_ptr<User> user = it->second;
         bool isNearInfectedUser = false;
         //If is not the case that the user is infected and not immune, we see if it has infected user nearby.
-        if(!user.isInfected() && !user.isImmune()){
+        if(!user->isInfected() && !user->isImmune()){
             //For everyone checks if near him there exsist a user that is infected.
             for(auto entryUsersInArea = this->usersInArea.begin(); entryUsersInArea != this->usersInArea.end() && !isNearInfectedUser ; ++entryUsersInArea){
-                User otherUser = *(entryUsersInArea->second);
-                if(otherUser.isInfected() && user.isNear(otherUser.pos.getX(),otherUser.pos.getY(),infectionDistance)){
+                shared_ptr<User> otherUser = entryUsersInArea->second;
+                if(otherUser->isInfected() && user->isNear(otherUser->pos->getX(),otherUser->pos->getY(),infectionDistance)){
                     isNearInfectedUser = true;
                 }
             }
-            if(!isNearInfectedUser && !userNearInternalBorders.count(user.getId())>0){//The user is near a border and it is not already near an infected user we have to check also for the neraby users.
+            if(!isNearInfectedUser && !userNearInternalBorders.count(user->getId())>0){//The user is near a border and it is not already near an infected user we have to check also for the neraby users.
                 for(auto entryUsersNearbyLocal = this->usersNearbyLocal.begin(); entryUsersNearbyLocal != this->usersNearbyLocal.end() && !isNearInfectedUser ; ++entryUsersNearbyLocal){
-                    User otherUser = *(entryUsersNearbyLocal->second);
+                    shared_ptr<User> otherUser = entryUsersNearbyLocal->second;
                     //Here is not necessary to check if the user is infected since the map contains only the infected users from other areas.
-                    if(user.isNear(otherUser.pos.getX(),otherUser.pos.getY(),infectionDistance)){
+                    if(user->isNear(otherUser->pos->getX(),otherUser->pos->getY(),infectionDistance)){
                         isNearInfectedUser = true;
                     }
                 }
@@ -78,8 +80,8 @@ void Area::updateUserInfectionStatus(int deltaTime, int infectionDistance){
                     //Check now that the user is not near an infected user from a remote source.
                     //Here is not necessary to check if the user is infected since the map contains only the infected users from other areas.
                     for(auto entryUsersNearbyRemote = this->usersNearbyRemote.begin(); entryUsersNearbyRemote != this->usersNearbyRemote.end() && !isNearInfectedUser ; ++entryUsersNearbyRemote){
-                        user_struct otherUser = *(entryUsersNearbyRemote->second);
-                        if(user.isNear(otherUser.pos_t.x,otherUser.pos_t.y,infectionDistance)){
+                        shared_ptr<user_struct> otherUser = entryUsersNearbyRemote->second;
+                        if(user->isNear(otherUser->x,otherUser->y,infectionDistance)){
                             isNearInfectedUser = true;
                         }
                     }
@@ -87,13 +89,13 @@ void Area::updateUserInfectionStatus(int deltaTime, int infectionDistance){
             }
         }
         //Save the boolean inside the map for the late update of the status.
-        usersNearInfected.insert({user.getId(),isNearInfectedUser});
+        usersNearInfected.insert({user->getId(),isNearInfectedUser});
     } 
 
     //Now updates all the users at once.
     for(auto it = usersInArea.begin(); it != usersInArea.end(); ++it){
-        User user = *(it->second.get());
-        user.updateUserInfectionState(usersNearInfected.at(it->first),deltaTime);
+        shared_ptr<User> user = it->second;
+        user->updateUserInfectionState(usersNearInfected.at(it->first),deltaTime);
     }
 }
 
@@ -129,8 +131,8 @@ map<int,vector<shared_ptr<user_struct>>> Area::getNearBorderUsersRemote(){
 }
 
 void Area::sortUser(shared_ptr<User> user, int infectionDistance){
-    if(user->pos.getX()<=higherX && user->pos.getX()>=lowerX && user->pos.getY()<=higherY && user->pos.getY()>=lowerY){//The user is still inside the region
-        if(user->pos.getX()>=(higherX-infectionDistance) && user->pos.getX()<=(lowerX+infectionDistance) && user->pos.getY()>=(higherY-infectionDistance) && user->pos.getY()<=(lowerY+infectionDistance))
+    if(user->pos->getX()<=higherX && user->pos->getX()>=lowerX && user->pos->getY()<=higherY && user->pos->getY()>=lowerY){//The user is still inside the region
+        if(user->pos->getX()>=(higherX-infectionDistance) && user->pos->getX()<=(lowerX+infectionDistance) && user->pos->getY()>=(higherY-infectionDistance) && user->pos->getY()<=(lowerY+infectionDistance))
             userNearInternalBorders.insert({ user->getId() , user });
     }else{//The user has gone too faraway
         outOfAreaUsers.push_back(user);
@@ -156,9 +158,29 @@ void Area::addNearbyUsersLocal(vector<shared_ptr<User>> nearbyUsersLocal){
     }
 }
 
-void Area::printActualState(){
-    //TODO print the stats of this area
+void Area::printActualState(FILE *ptr){
+    int infectedUser,immuneUser;
+    tie(infectedUser,immuneUser) = actuallyInfectedAndImmuneUser();
+    ostringstream stream;
+    stream << "Area ID: " << id << "\n"
+            "   Actual population: " << usersInArea.size() << "\n" 
+            "   Actually infected: " << infectedUser << "\n" 
+            "   Actually immune: " << immuneUser << "\n";
+    fprintf(ptr,"%s", fromStringToCharName(stream.str()));
+
 }
+
+tuple<int,int> Area::actuallyInfectedAndImmuneUser(){
+    int infectedUser = 0;
+    int immuneUser = 0;
+    for(auto it = this->usersInArea.begin(); it != this->usersInArea.end(); ++it){
+        shared_ptr<User> user = it->second;
+        if(user->isInfected()) infectedUser++;
+        else if(user->isImmune()) immuneUser++; 
+    }
+    return {infectedUser,immuneUser};
+}
+
 
 void Area::computeNearBorderUserMap(int infectedDistance, int my_processor_rank){
     //Check the various user based on the border to which they are near.
@@ -167,63 +189,63 @@ void Area::computeNearBorderUserMap(int infectedDistance, int my_processor_rank)
         shared_ptr<User> user = entriesUsersInternalNearBorder->second;
         //Do this computation only if the user is infected.
         if(user->isInfected()){
-            if(user->pos.getX() <= (lowerX + infectedDistance)){
+            if(user->pos->getX() <= (lowerX + infectedDistance)){
                 //Check West
                 if(neighborAreas.count(West)>0)
-                    addUserNear(user,neighborAreas.at(West).get(),my_processor_rank);
+                    addUserNear(user,neighborAreas.at(West),my_processor_rank);
                 //Check North-West and also North
-                if(user->pos.getY()>=(higherY-infectedDistance)){
+                if(user->pos->getY()>=(higherY-infectedDistance)){
                     //Check North-West
                     if(neighborAreas.count(NorthWest)>0)
-                        addUserNear(user,neighborAreas.at(NorthWest).get(),my_processor_rank);
+                        addUserNear(user,neighborAreas.at(NorthWest),my_processor_rank);
                     //Check North
                     if(neighborAreas.count(North)>0)
-                        addUserNear(user, neighborAreas.at(North).get(),my_processor_rank);
-                }else if(user->pos.getY()<=(lowerY+infectedDistance)){ //Check South and South-West
+                        addUserNear(user, neighborAreas.at(North),my_processor_rank);
+                }else if(user->pos->getY()<=(lowerY+infectedDistance)){ //Check South and South-West
                     //Check South-West
                     if(neighborAreas.count(SouthWest)>0)
-                        addUserNear(user,neighborAreas.at(SouthWest).get(),my_processor_rank);
+                        addUserNear(user,neighborAreas.at(SouthWest),my_processor_rank);
                     //Check South
                     if(neighborAreas.count(South)>0)
-                        addUserNear(user, neighborAreas.at(South).get(),my_processor_rank);
+                        addUserNear(user, neighborAreas.at(South),my_processor_rank);
                 }
-            }else if(user->pos.getX()>=(higherX-infectedDistance)){
+            }else if(user->pos->getX()>=(higherX-infectedDistance)){
                 //Check East
                 if(neighborAreas.count(East)>0)
-                    addUserNear(user,neighborAreas.at(East).get(),my_processor_rank);
+                    addUserNear(user,neighborAreas.at(East),my_processor_rank);
                 //Check North-East and also North
-                if(user->pos.getY()>=(higherY-infectedDistance)){
+                if(user->pos->getY()>=(higherY-infectedDistance)){
                     //Check North-East
                     if(neighborAreas.count(NorthEast)>0)
-                        addUserNear(user,neighborAreas.at(NorthEast).get(),my_processor_rank);
+                        addUserNear(user,neighborAreas.at(NorthEast),my_processor_rank);
                     //Check North
                     if(neighborAreas.count(North)>0)
-                        addUserNear(user, neighborAreas.at(North).get(),my_processor_rank);
-                }else if(user->pos.getY()<=(lowerY+infectedDistance)){ //Check South and South-East
+                        addUserNear(user, neighborAreas.at(North),my_processor_rank);
+                }else if(user->pos->getY()<=(lowerY+infectedDistance)){ //Check South and South-East
                     //Check South-East
                     if(neighborAreas.count(SouthEast)>0)
-                        addUserNear(user,neighborAreas.at(SouthEast).get(),my_processor_rank);
+                        addUserNear(user,neighborAreas.at(SouthEast),my_processor_rank);
                     //Check South
                     if(neighborAreas.count(South)>0)
-                        addUserNear(user, neighborAreas.at(South).get(),my_processor_rank);
+                        addUserNear(user, neighborAreas.at(South),my_processor_rank);
                 }     
-            }else if(user->pos.getY()>=(higherX-infectedDistance)){
+            }else if(user->pos->getY()>=(higherX-infectedDistance)){
                 //Since we have previously check this has to be sent only to north.
                 //Check North
                 if(neighborAreas.count(North)>0)
-                    addUserNear(user, neighborAreas.at(North).get(),my_processor_rank);
-            }else if(user->pos.getY()<=(lowerY+infectedDistance)){
+                    addUserNear(user, neighborAreas.at(North),my_processor_rank);
+            }else if(user->pos->getY()<=(lowerY+infectedDistance)){
                 //Since we have previously check this has to be sent only to south.
                 //Check South
                 if(neighborAreas.count(South)>0)
-                    addUserNear(user, neighborAreas.at(South).get(),my_processor_rank);
+                    addUserNear(user, neighborAreas.at(South),my_processor_rank);
             }
         }
     }
 }
 
 //NOTE: locally the user in the list cannot be reapted. Instead we need to check for remote destination.
-void Area::addUserNear(shared_ptr<User> user,  NeighborArea *neighborArea, int my_processor_rank){
+void Area::addUserNear(shared_ptr<User> user,  shared_ptr<NeighborArea> neighborArea, int my_processor_rank){
     if(neighborArea->isLocal(my_processor_rank)){
         vector<shared_ptr<User>> * users;
         if(mapAreasToUsersLocal.count(neighborArea->getID())) users = &(mapAreasToUsersLocal.at(neighborArea->getID()));
@@ -257,5 +279,6 @@ void Area::addUserNear(shared_ptr<User> user,  NeighborArea *neighborArea, int m
 }
 
 void Area::computeOutOfAreaUserMap(int my_processor_rank){
-    //TODO compute the map with the user out of map and their destination, leaves inside the out of area users only the one that has to be deleted.
+    //TODO compute the map with the user out of map and their destination.
+    //TODO if the neighbor area doesn not exists, than change direction of the user.
 }

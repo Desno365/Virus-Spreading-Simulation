@@ -3,11 +3,13 @@
 
 #include "user/user.h"
 #include "area/neighborArea.h"
-#include "utility.h"
+#include "utility/utility.h"
 #include <map>
 #include <iostream>
 #include <vector>
 #include <tuple>
+#include <stdio.h>
+#include <stdlib.h>
 
 //It represents a country.
 class Area
@@ -68,7 +70,7 @@ class Area
         //X is considered aligned with the Column, while Y with the Row of the global map.
         tuple<int,int> getRadomDirection(); 
         //Prints on the standard output the actual state of the area.
-        void printActualState();
+        void printActualState(FILE *ptr);
         //Return the id of this area.
         int getID();
     private:
@@ -104,7 +106,7 @@ class Area
         //to which the infected user has to be sent remotly.
         map<int,vector<shared_ptr<user_struct>>>  mapAreasToUsersRemote;
         //Add a user to one of the previous maps, based on the neighbor area, it will only work on infected user.
-        void addUserNear(shared_ptr<User> user, NeighborArea *neighborArea, int my_processor_rank);
+        void addUserNear(shared_ptr<User> user, shared_ptr<NeighborArea> neighborArea, int my_processor_rank);
 
         //It is recomputed each time computeNearBorderUserMap(), and contains the association of the id of the area
         //to which the infected user has to be sent locally.
@@ -112,6 +114,10 @@ class Area
         //It is recomputed each time computeNearBorderUserMap(), and contains the association of the id of the process
         //to which the infected user has to be sent remotly.
         map<int,vector<shared_ptr<user_struct>>>  mapOutOfAreasToUsersRemote;
+
+        //Returns a tuple in which the first elements is the number of users actually infected in this area, while
+        //the second is the number of users actually immune.
+        tuple<int,int> actuallyInfectedAndImmuneUser();
     protected:
 };
 

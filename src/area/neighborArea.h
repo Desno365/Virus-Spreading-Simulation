@@ -1,7 +1,7 @@
 #ifndef NEIGHBORAREA_H
 #define NEIGHBORAREA_H
 
-#include "utility.h"
+#include "utility/utility.h"
 using namespace std;
 
 class NeighborArea{

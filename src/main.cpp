@@ -6,11 +6,12 @@
 #include <list>
 #include <tuple>
 #include <unistd.h> //For debugging
-#include <stdlib.h>
 #include <time.h>  
+#include <stdio.h>
 
 #include "user/user.h"
 #include "area/area.h"
+#include "utility/utility.h"
 
 using namespace std;
 //Is the number of parameters that can be passed when the program execute
@@ -18,6 +19,8 @@ using namespace std;
 //Is the size of the matrix that is considered as a neighborhoodof an Area.
 //NOTE: it has to be ODD.
 #define NEIGHBOR_DISTANCE 3
+//Is the number of seconds in a day. Is used in order to print the status only after a day.
+#define SECONDS_IN_DAY 86400
 
 //Retuns the value associated to the option between the two pointers
 char* getCmdOption(char ** begin, char ** end, const string & option)
@@ -71,8 +74,8 @@ int main(int argc, char** argv) {
     }
 
     MPI_Barrier(MPI_COMM_WORLD);
-    //Used only for debugging comment this if not interested
 
+    //Used only for debugging comment this if not interested
     string requiredParameters[NUMBER_OF_PARAMETERS] = {"-N","-I","-W","-L","-w","-l","-v","-d","-t","-D"};
     if(my_rank==0 && cmdOptionExists(argv, argv+argc, "-h"))
     {
@@ -140,10 +143,7 @@ int main(int argc, char** argv) {
     srand (time(NULL));
 
     //Register the required MPI types. 
-    vector<MPI_Datatype> mpi_datatypes;
-    MPI_Datatype mpi_position = Position::getMPIType(mpi_datatypes);
-    mpi_datatypes.push_back(mpi_position);
-    MPI_Datatype mpi_user = User::getMPIType(mpi_datatypes);
+    MPI_Datatype mpi_user = User::getMPIType();
 
 
     //Get the number of processors in the world
@@ -185,7 +185,7 @@ int main(int argc, char** argv) {
             //Generate a random direction vector.
             int userDirX,userDirY;
             tie(userDirX,userDirY) = area->getRadomDirection();
-            Position userPos(userX,userY,v,userDirX,userDirX);
+            shared_ptr<Position> userPos = make_shared<Position>(userX,userY,v,userDirX,userDirX);
             //Compute a unique user ID
             int userID = my_rank * N + i;
             //Set infected the first generated users per area
@@ -195,15 +195,36 @@ int main(int argc, char** argv) {
         }
     }
 
-    //TODO before starting recompute the infection state of the user.
-    int total_seconds = D * 24 * 60 * 60;
+    //NOTE: users starts to infect other users the step next to the one in which they've becomed infected.
+    //This is the total duration of the computation.
+    int total_seconds = D * SECONDS_IN_DAY;
+    //Is the last day on which we have print the status.
+    int next_day_print_status = 0;
+
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    //For each processor gets its outputFile:
+    string fileName = "./outputs/results-" + to_string(my_rank) +".csv";
+    FILE *fptr = fopen(fromStringToCharName(fileName),"w");
+    if(fptr == NULL)
+    {
+        printf("Error in opening %s!",fromStringToCharName(fileName));   
+        exit(1);             
+    }
 
     //Now starts the main loop.
     for(int elapsedTime = 0; elapsedTime < total_seconds; elapsedTime+=t){
-        if (true){    //TODO print only the status only every day.                
+        //Wait fo everyone to reach this point.
+        MPI_Barrier(MPI_COMM_WORLD);
+        if ( (elapsedTime / SECONDS_IN_DAY) > next_day_print_status ){
+            string recap = "The state of the infection spreading at day "+ to_string(next_day_print_status) + " of the computation is:\n";
+            fprintf(fptr,"%s", fromStringToCharName(recap));
             for(shared_ptr<Area> area:processor_areas){
-                area->printActualState();
+                area->printActualState(fptr);
             }
+            fprintf(fptr,"%s", fromStringToCharName("\n"));
+            next_day_print_status++;
+            MPI_Barrier(MPI_COMM_WORLD);
         }
 
         //TODO start by exchaning information about users since you have already started by placing them
@@ -216,14 +237,22 @@ int main(int argc, char** argv) {
         //- The when everything is up to date we move the user struct for updating the global state
 
         //After this every area has a global vision of the map so it can update the infected status of the user.
-        for(shared_ptr<Area> area:processor_areas){
-            area->updateUserInfectionStatus(t,d);
-        }
+        // for(shared_ptr<Area> area:processor_areas){
+        //     area->updateUserInfectionStatus(t,d);
+        // }
 
-        //Update the position of all the users in the various area.
-        for(shared_ptr<Area> &area:processor_areas){
-            area->updateUserPositions(t,d);
-        }
+        // //Update the position of all the users in the various area.
+        // for(shared_ptr<Area> &area:processor_areas){
+        //     area->updateUserPositions(t,d);
+        // }
+    }
+
+    //Print the state at the end of the computation.
+    MPI_Barrier(MPI_COMM_WORLD);
+    string recap = "The state of the infection spreading at the end of the computation is:\n";
+    fprintf(fptr,"%s", fromStringToCharName(recap));
+    for(shared_ptr<Area> area:processor_areas){
+        area->printActualState(fptr);
     }
 
     MPI_Finalize();
