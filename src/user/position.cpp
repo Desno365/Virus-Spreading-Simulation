@@ -20,3 +20,24 @@ tuple<float,float> Position::getCoordinates(){
 tuple<float,float> Position::getDirections(){
     return {dirX,dirY};
 }
+
+void Position::updateDirections(float newDirx, float newDirY){
+    dirX = newDirx;
+    dirY = newDirY;
+}
+
+//NOTE: follow this link https://www.codeproject.com/Articles/42727/Equation-Solver-in-C
+void Position::goBackToIntersection(float coefX, float coefY, float noteTerm){
+    //Rewrite the input equaiton as ax + by + c = 0
+    int a = coefX;
+    int b = coefY;
+    int c = noteTerm;
+    //Rewrite the moving direction of out point as dx + ey + f = 0
+    int d = 1/dirX;
+    int e = -1/dirY;
+    int f = y/dirY - x/dirX;
+    //The solution is given by:
+    float denominator = (a*e-d*b);
+    x = (f*b-c*e) / denominator;
+    y = (c*d-f*a) / denominator; 
+}

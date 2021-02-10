@@ -5,3 +5,31 @@ char * fromStringToCharName(string string){
     strcpy(name_as_chars,string.c_str());
     return name_as_chars;
 }
+
+tuple<int,int> fromDirectionToVector(Direction direction){
+    switch (direction)
+    {
+    case North:
+    case NorthEast:
+    case NorthWest:
+    case South:
+    case SouthEast:
+    case SouthWest:
+        return {0,1};    
+    case West:
+    case East:
+        return {1,0};    
+    default:
+        return {0,0};
+    }
+}
+
+//NOTE: follow this link https://www.delftstack.com/howto/cpp/how-to-generate-random-float-number-in-cpp/
+random_device rd;
+default_random_engine eng(rd());
+
+float generateRandomFloat(float max, float min){
+    uniform_real_distribution<float> distr(min,max);
+
+    return distr(eng);
+}

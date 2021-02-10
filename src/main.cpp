@@ -46,7 +46,7 @@ int getNumberOfAreas(int W,int L, int w,int l);
 int getStride(int W,int w);
 
 //Returns the vector of Area associated to the provided processor_rank.
-vector<shared_ptr<Area>> getArea(int numberOfAreas, int processor_rank, int world_size,int stride);
+vector<shared_ptr<Area>> getArea(int numberOfAreas, int processor_rank, int world_size,int stride, float infectionDistance, int deltaTime);
 
 int main(int argc, char** argv) {
 
@@ -160,7 +160,7 @@ int main(int argc, char** argv) {
     }
 
     //Assign different users to different processor
-    vector<shared_ptr<Area>> processor_areas = getArea(number_of_areas,my_rank,world_size,getStride(W,w));
+    vector<shared_ptr<Area>> processor_areas = getArea(number_of_areas,my_rank,world_size,getStride(W,w),d,t);
 
     //Create the user associated to each processor(we split the number of user in an equal way for each area
     //also the infected users are equally).
@@ -192,7 +192,7 @@ int main(int argc, char** argv) {
             //Set infected the first generated users per area
             bool isAlreadyInfected = i<infected_users_area ? true : false;
             shared_ptr<User> newUser = make_shared<User>(userID, userPos, isAlreadyInfected);
-            area->addUser(newUser,d);
+            area->addUser(newUser);
         }
     }
 
@@ -206,24 +206,29 @@ int main(int argc, char** argv) {
 
     //For each processor gets its outputFile:
     string fileName = "./outputs/results-" + to_string(my_rank) +".csv";
-    FILE *fptr = fopen(fromStringToCharName(fileName),"w");
+    char * str = fromStringToCharName(fileName);
+    FILE *fptr = fopen(str,"w");
     if(fptr == NULL)
     {
-        printf("Error in opening %s!",fromStringToCharName(fileName));   
+        printf("Error in opening %s!",str);   
         exit(1);             
     }
-
+    free(str);
     //Now starts the main loop.
     for(int elapsedTime = 0; elapsedTime < total_seconds; elapsedTime+=t){
         //Wait fo everyone to reach this point.
         MPI_Barrier(MPI_COMM_WORLD);
         if ( (elapsedTime / SECONDS_IN_DAY) > next_day_print_status ){
             string recap = "The state of the infection spreading at day "+ to_string(next_day_print_status) + " of the computation is:\n";
-            fprintf(fptr,"%s", fromStringToCharName(recap));
+            str = fromStringToCharName(recap);
+            fprintf(fptr,"%s", str);
+            free(str);
             for(shared_ptr<Area> area:processor_areas){
                 area->printActualState(fptr);
             }
-            fprintf(fptr,"%s", fromStringToCharName("\n"));
+            str = fromStringToCharName("\n");
+            fprintf(fptr,"%s", str);
+            free(str);
             next_day_print_status++;
             MPI_Barrier(MPI_COMM_WORLD);
         }
@@ -239,19 +244,21 @@ int main(int argc, char** argv) {
 
         //After this every area has a global vision of the map so it can update the infected status of the user.
         // for(shared_ptr<Area> area:processor_areas){
-        //     area->updateUserInfectionStatus(t,d);
+        //     area->updateUserInfectionStatus();
         // }
 
         // //Update the position of all the users in the various area.
         // for(shared_ptr<Area> &area:processor_areas){
-        //     area->updateUserPositions(t,d);
+        //     area->updateUserPositions();
         // }
     }
 
     //Print the state at the end of the computation.
     MPI_Barrier(MPI_COMM_WORLD);
     string recap = "The state of the infection spreading at the end of the computation is:\n";
-    fprintf(fptr,"%s", fromStringToCharName(recap));
+    str = fromStringToCharName(recap);
+    fprintf(fptr,"%s", str);
+    free(str);
     for(shared_ptr<Area> area:processor_areas){
         area->printActualState(fptr);
     }
@@ -273,7 +280,7 @@ int getStride(int W,int w){
 }
 
 //NOTE: the ids of the areas are assigned from left to right, top to bottom in increasing order.
-vector<shared_ptr<Area>> getArea(int numberOfAreas, int processor_rank, int world_size,int stride){
+vector<shared_ptr<Area>> getArea(int numberOfAreas, int processor_rank, int world_size,int stride, float infectionDistance, int deltaTime){
     vector<shared_ptr<Area>> areas;
     int minAreasForProcessor = numberOfAreas / world_size;
     int maxAreasForProcessor = numberOfAreas % world_size == 0 ? minAreasForProcessor : minAreasForProcessor + 1;
@@ -287,7 +294,7 @@ vector<shared_ptr<Area>> getArea(int numberOfAreas, int processor_rank, int worl
         endingAreaID = startingAreaID+minAreasForProcessor;
     }
     for(int i=startingAreaID; i<endingAreaID;i++){
-        shared_ptr<Area> newArea = make_shared<Area>(i%stride,i/stride,i);
+        shared_ptr<Area> newArea = make_shared<Area>(i%stride,i/stride,i,infectionDistance, deltaTime, processor_rank);
         areas.push_back(newArea);
     }
     for(shared_ptr<Area> area:areas){

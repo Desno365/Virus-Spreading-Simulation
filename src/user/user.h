@@ -42,6 +42,9 @@ class User
         //if it is actually near an infected user: this field is discarded if the user is immune or infected.
         //New infected user will start to infect other users only at the next step.
         void updateUserInfectionState(bool isNearAnInfected, int deltaTime);
+        //Set the position to a previous passed set of points based on the intersection with the hyperplane
+        //described by the arguments of the function.
+        void goBackToIntersection(float coefX, float coefY, float noteTerm);
         //Returns true if the user is infected.
         bool isInfected();
         //Returns the id of the user.

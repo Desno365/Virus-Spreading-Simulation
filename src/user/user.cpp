@@ -11,7 +11,7 @@
 
 using namespace std;
 
-User::User(int id, shared_ptr<Position> position, bool isAlreadyInfected):id(id),pos(position),infected(isAlreadyInfected){
+User::User(int id, shared_ptr<Position> position, bool isAlreadyInfected):pos(position),id(id),infected(isAlreadyInfected){
     this->updateStruct();
     this->infected = false;
     this->immuneTime = 0;
@@ -63,7 +63,6 @@ MPI_Datatype User::getMPIType(){
     //Compute the displacment of elements in the struct.
     MPI_Datatype types[struct_len];
     MPI_Aint displacements[struct_len];
-    MPI_Aint current_displacement = 0;
     //Add id.
     block_lens[0] = 1;
     types[0] = MPI_INT;
@@ -146,4 +145,9 @@ bool User::isNear(float x, float y, float infectionDistance){
     float distanceY = pos->getY() - y;
     float distance = sqrt(pow(distanceX,2) + pow(distanceY,2)); 
     return distance<=infectionDistance;
+}
+
+void User::goBackToIntersection(float coefX, float coefY, float noteTerm){
+    this->pos->goBackToIntersection(coefX, coefY, noteTerm);
+    this->updateStruct();
 }

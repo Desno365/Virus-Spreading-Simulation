@@ -22,10 +22,17 @@ class Position
         //Update the actual value on the Position at each call. It advance of 1 second
         //since the time step is alwasy the same.
         void updatePosition(int deltaTime);
+        //Set the position to a previous passed set of points based on the intersection with the hyperplane
+        //described by the arguments of the function.
+        void goBackToIntersection(float coefX, float coefY, float noteTerm);
         //Returns X.
         float getX() { return x; };
         //Returns Y.
         float getY() { return y; };
+        //Return the velocity associated to this position.
+        float getVel() { return vel; };
+        //Update the direction of the user with the new given direction.
+        void updateDirections(float newDirx, float newDirY);
         //Returns a tuple with (X,Y);
         tuple<float,float> getCoordinates();
         //Returns a tuple with (dirX,dirY).
