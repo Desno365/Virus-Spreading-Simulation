@@ -73,6 +73,10 @@ class Area
         void printActualState(FILE *ptr);
         //Return the id of this area.
         int getID();
+
+        // METHODS FOR TESTS:
+        map<int,shared_ptr<User>> getUserNearInternalBorders();
+        vector<shared_ptr<User>> getOutOfAreaUsers();
     private:
         //Is the id of the area.
         int id;
