@@ -386,3 +386,11 @@ void Area::addUserOutOfArea(Direction direction, shared_ptr<User> user, int bord
         //after the exchange of all the user out of areas.
     }
 }
+
+// METHODS FOR TESTS:
+map<int,shared_ptr<User>> Area::getUserNearInternalBorders(){
+    return userNearInternalBorders;
+}
+vector<shared_ptr<User>> Area::getOutOfAreaUsers() {
+    return outOfAreaUsers;
+}

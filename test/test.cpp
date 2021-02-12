@@ -1,9 +1,47 @@
 #define CATCH_CONFIG_MAIN
 #include <catch2/catch.hpp>
 #include "./../src/user/user.h"
+#include "./../src/area/area.h"
+#include "./testUtility.cpp"
+
+using namespace std;
 
 // 1) Install Catch2 (it can be installed for example through homebrew with the command "brew install catch2");
 // 2) Run the following command: make test -B
+
+
+TEST_CASE("Area") {
+
+    SECTION("sortUser") {
+        // Initialize test area with users with 0 velocity.
+        shared_ptr<Area> area = getTestArea(0.0);
+
+        // Make tests on the created area.
+        map<int,shared_ptr<User>> userNearInternalBorders1 = area->getUserNearInternalBorders();
+        vector<shared_ptr<User>> outOfAreaUsers1 = area->getOutOfAreaUsers();
+        REQUIRE( userNearInternalBorders1.size() == 2 );
+        REQUIRE( outOfAreaUsers1.size() == 1 );
+    }
+
+    SECTION("updateUserPositions") {
+        // Initialize test area with users with very big velocity (so they exit the area).
+        shared_ptr<Area> area = getTestArea(9999999.9);
+
+        // Make tests on the created area.
+        map<int,shared_ptr<User>> userNearInternalBorders1 = area->getUserNearInternalBorders();
+        vector<shared_ptr<User>> outOfAreaUsers1 = area->getOutOfAreaUsers();
+        REQUIRE( userNearInternalBorders1.size() == 2 );
+        REQUIRE( outOfAreaUsers1.size() == 1 );
+
+        area->updateUserPositions();
+
+        map<int,shared_ptr<User>> userNearInternalBorders2 = area->getUserNearInternalBorders();
+        vector<shared_ptr<User>> outOfAreaUsers2 = area->getOutOfAreaUsers();
+        REQUIRE( userNearInternalBorders2.size() == 0 );
+        REQUIRE( outOfAreaUsers2.size() == 5 );
+    }
+
+}
 
 TEST_CASE("User") {
 
