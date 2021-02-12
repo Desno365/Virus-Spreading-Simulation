@@ -16,7 +16,7 @@
 using namespace std;
 //Is the number of parameters that can be passed when the program execute
 #define NUMBER_OF_PARAMETERS 10
-//Is the size of the matrix that is considered as a neighborhoodof an Area.
+//Is the size of the matrix that is considered as a neighborhoods an Area.
 //NOTE: it has to be ODD.
 #define NEIGHBOR_DISTANCE 3
 //Is the number of seconds in a day. Is used in order to print the status only after a day.
@@ -140,7 +140,7 @@ int main(int argc, char** argv) {
             cout << "Error with parameter " << requiredParameters[i];
         }
     }
-    //Check that the number of users is greater than the number of indiiduals intially infected.
+    //Check that the number of users is greater than the number of individuals intially infected.
     if(N<I){
         if(my_rank==0)
             cout << "\nThe number of user has to be greater than the number of individuals intially infected.\n";
@@ -299,7 +299,7 @@ int main(int argc, char** argv) {
             }else{
                 n_OutOfAreaUsers = mapOutOfAreaUsersToAreaRemote->at(i).size();
             }
-            MPI_Gather(&n_OutOfAreaUsers, 1, MPI_INT, gather_buffer_sizes, 1, MPI_INT, 0, MPI_COMM_WORLD);
+            MPI_Gather(&n_OutOfAreaUsers, 1, MPI_INT, gather_buffer_sizes, 1, MPI_INT, i, MPI_COMM_WORLD);
 
             //Now we can receive from the remote location the user struct of the user out of areas.
             //Is the datatype for the vector of user struct that has to be sent.
@@ -318,7 +318,8 @@ int main(int argc, char** argv) {
                     send_vector.push_back(user);
                 }
             }
-            MPI_Gatherv(&send_vector, n_OutOfAreaUsers, mpi_user, gather_buffer_structs, gather_buffer_sizes, displays,mpi_user, 0, MPI_COMM_WORLD);
+            MPI_Barrier(MPI_COMM_WORLD);
+            MPI_Gatherv(&send_vector, n_OutOfAreaUsers, mpi_user, gather_buffer_structs, gather_buffer_sizes, displays,mpi_user, i, MPI_COMM_WORLD);
 
             //Now convert the user_structs into Users.
             if(i==my_rank){
@@ -383,7 +384,7 @@ int main(int argc, char** argv) {
             }else{
                 n_nearbyUsersToRemote = mapNearBorderUsersToAreaRemote->at(i).size();
             }
-            MPI_Gather(&n_nearbyUsersToRemote, 1, MPI_INT, gather_buffer_sizes, 1, MPI_INT, 0, MPI_COMM_WORLD);
+            MPI_Gather(&n_nearbyUsersToRemote, 1, MPI_INT, gather_buffer_sizes, 1, MPI_INT, i, MPI_COMM_WORLD);
 
             //Now we can receive from the remote location the user struct of the user out of areas.
             //Is the datatype for the vector of user struct that has to be sent.
@@ -402,7 +403,7 @@ int main(int argc, char** argv) {
                     send_vector.push_back(user);
                 }
             }
-            MPI_Gatherv(&send_vector, n_nearbyUsersToRemote, mpi_user, gather_buffer_structs, gather_buffer_sizes, displays,mpi_user, 0, MPI_COMM_WORLD);
+            MPI_Gatherv(&send_vector, n_nearbyUsersToRemote, mpi_user, gather_buffer_structs, gather_buffer_sizes, displays,mpi_user, i, MPI_COMM_WORLD);
 
             //Now convert the user_structs into shared pointer of user struct.
             if(i==my_rank){
@@ -448,11 +449,14 @@ int main(int argc, char** argv) {
         area->printActualState(fptr);
     }
 
+    //Closed the opened file.
+    fclose(fptr);
+
     //TearDown the data structure used for the main loop;
     mapOutOfAreaUsersToAreaLocal->clear();
     delete mapOutOfAreaUsersToAreaLocal;
     mapOutOfAreaUsersToAreaRemote->clear();
-    delete mapOutOfAreaUsersToAreaLocal;
+    delete mapOutOfAreaUsersToAreaRemote;
     mapNearBorderUsersToAreaLocal->clear();
     delete mapNearBorderUsersToAreaLocal;
     mapNearBorderUsersToAreaRemote->clear();

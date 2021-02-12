@@ -13,10 +13,9 @@ import sys
 # $ echo 0 > /proc/sys/kernel/yama/ptrace_scope
 context.terminal = ["terminator", "-e"]
 
-
-# # Make the program
+# Make the program
 r = process("make -B",shell=True)
-print("receving line")
+print("receiving line")
 makeOutput = r.recvall().decode("utf-8")
 r.wait_for_close()
 
@@ -38,9 +37,7 @@ pid = int(r.recvuntil("\n")[:-1])
 # returning the control.
 # NOTE: the first break has always to coincide with the address of the sleep.
 gdb.attach(pid, """
-    break main.cpp:71
-    break main.cpp:314
-    break main.cpp:290
+    break main.cpp:79
     c
     set var ifl =7
     c

@@ -276,7 +276,7 @@ void Area::addUserNear(shared_ptr<User> user,  shared_ptr<NeighborArea> neighbor
         }
         users->push_back(user);
     }else{
-        //We have to send the information remotly.
+        //We have to send the information remotely.
         vector<shared_ptr<user_struct>> * users_t;
         if(mapAreasToUsersRemote.count(neighborArea->getID())) users_t = &(mapAreasToUsersRemote.at(neighborArea->getID()));
         else{
