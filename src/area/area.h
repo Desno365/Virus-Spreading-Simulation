@@ -79,6 +79,9 @@ class Area
         tuple<float,float> getRadomDirection(); 
         //Prints on the standard output the actual state of the area.
         void printActualState(FILE *ptr);
+        //Returns a tuple in which the first elements is the number of users actually infected in this area, while
+        //the second is the number of users actually immune.
+        tuple<int,int> actuallyInfectedAndImmuneUser();
         //Return the id of this area.
         int getID() { return id; };
 
@@ -135,10 +138,6 @@ class Area
         //Add the user to one of the previous map( if the user has not reached a border) based on the neighbor area
         //that is present inside the neighboar areas map at the correspondent direction.
         void addUserOutOfArea(Direction direction, shared_ptr<User> user, int borderCoordinates);
-
-        //Returns a tuple in which the first elements is the number of users actually infected in this area, while
-        //the second is the number of users actually immune.
-        tuple<int,int> actuallyInfectedAndImmuneUser();
     protected:
 };
 
