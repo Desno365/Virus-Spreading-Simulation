@@ -80,7 +80,7 @@ class Area
         //Prints on the standard output the actual state of the area.
         void printActualState(FILE *ptr);
         //Return the id of this area.
-        int getID();
+        int getID() { return id; };
 
         // METHODS FOR TESTS:
         map<int,shared_ptr<User>> getUserNearInternalBorders();

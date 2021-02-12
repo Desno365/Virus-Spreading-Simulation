@@ -19,6 +19,8 @@ class Position
         Position(float x, float y, float vel, float dirX, float dirY);
         //Sets the direction to the vector represented by dirX and dirY.
         void setDirection(float dirX, float dirY);
+        //Set the positions to the arguments values.
+        void setCoordinates(float x, float y) { this->x = x; this->y = y; };
         //Update the actual value on the Position at each call. It advance of 1 second
         //since the time step is alwasy the same.
         void updatePosition(int deltaTime);

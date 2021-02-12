@@ -125,7 +125,11 @@ tuple<float,float> Area::getRadomCoordinates(){
 }
 
 tuple<float,float> Area::getRadomDirection(){
-    return { generateRandomFloat(1,-1), generateRandomFloat(1,-1)};
+    float rand1,rand2;
+    while( (rand1 = generateRandomFloat(1,-1))==0.0 );
+    while( (rand2 = generateRandomFloat(1,-1))==0.0 );
+    float term = sqrt( pow(rand1,2) + pow(rand2,2) );
+    return { rand1/term, rand2/term};
 }
 
 map<int,vector<shared_ptr<User>>> Area::getOutOfAreaUsersLocal(){
@@ -359,11 +363,16 @@ void Area::addUserOutOfArea(Direction direction, shared_ptr<User> user, int bord
     }else{
         //If the are isn't present than the user changes direction and remains in this area.
         //The user's coordinates are also updated to the nearest border.
-
-        //Set the user coordinates to be on the nearest border, by doing the intersection between plane.
-        int coefX,coefY;
-        tie(coefX,coefY) = fromDirectionToVector(direction);
-        user->goBackToIntersection(coefX/borderCoordinates, coefY/borderCoordinates,1);
+        if(direction==NorthEast) user->pos->setCoordinates(higherX,higherY);
+        else if(direction==NorthWest) user->pos->setCoordinates(lowerX,higherY);
+        else if(direction==SouthEast) user->pos->setCoordinates(higherX,lowerY);
+        else if(direction==SouthWest) user->pos->setCoordinates(lowerX,lowerY);
+        else{
+            //Set the user coordinates to be on the nearest border, by doing the intersection between plane.
+            int coefX,coefY;
+            tie(coefX,coefY) = fromDirectionToVector(direction);
+            user->goBackToIntersection(coefX/borderCoordinates, coefY/borderCoordinates,1);
+        }
 
         //Now update the direction of the user such that at the next iteration it will remains inside this region.
         float newDirX, newDirY;

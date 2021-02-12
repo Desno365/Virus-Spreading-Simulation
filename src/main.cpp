@@ -308,8 +308,8 @@ int main(int argc, char** argv) {
             if(i==my_rank){
                 //If this is my turn then I have to gather information from other nodes.
                 for(int i=0; i<world_size ; i++){//TODO error when i==my_rank???
-                    receiving_size += gather_buffer_sizes[i];
                     displays[i] = receiving_size;
+                    receiving_size += gather_buffer_sizes[i];
                 }
                 gather_buffer_structs = (user_struct *) malloc(sizeof(user_struct) * receiving_size);
             }else{
