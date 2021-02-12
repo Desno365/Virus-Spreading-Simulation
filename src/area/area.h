@@ -53,7 +53,7 @@ class Area
         //Returns a Map that associated the remote processor interested in knowing the users near the border that are infected.
         map<int,vector<shared_ptr<user_struct>>> getNearBorderUsersRemote();
         //Computes the two maps that contains the users near the border. Use the previous getter to get them.
-        //NOTE: it assumes that it is called after updaetUserPosition() so the map of the user near the border is up to date.
+        //NOTE: it assumes that it is called after updateUserPosition() so the map of the user near the border is up to date.
         void computeNearBorderUserMap();
         //Returns a tuple with the (col,row) of this area.
         tuple<int,int> getCoordinate();
@@ -108,7 +108,7 @@ class Area
         //Is the map that contains the user inside this area that are near the border.OUT
         map<int,shared_ptr<User>> userNearInternalBorders;
         //Is the map that contains the users that has gone out of this area. User objects will be
-        //deleted and trasnformed into the user struct if it has to go to another processor. OUT
+        //deleted and transformed into the user struct if it has to go to another processor. OUT
         vector<shared_ptr<User>> outOfAreaUsers;
         //Contains the neighbor areas.
         map<Direction,shared_ptr<NeighborArea>> neighborAreas;

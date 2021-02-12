@@ -4,9 +4,6 @@
 
 #include "area.h"
 
-//Is the maximum number used by rand() to generates coordinates.
-#define RAND_MAX_DIRECTION 3
-
 Area::Area(int col,int row, int id, float infectionDistance, int deltaTime, int my_processor_rank):id(id),col(col),row(row),infectionDistance(infectionDistance),deltaTime(deltaTime),my_processor_rank(my_processor_rank){}
 
 Area::~Area(){

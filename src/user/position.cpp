@@ -28,7 +28,7 @@ void Position::updateDirections(float newDirx, float newDirY){
 
 //NOTE: follow this link https://www.codeproject.com/Articles/42727/Equation-Solver-in-C
 void Position::goBackToIntersection(float coefX, float coefY, float noteTerm){
-    //Rewrite the input equaiton as ax + by + c = 0
+    //Rewrite the input equation as ax + by + c = 0
     int a = coefX;
     int b = coefY;
     int c = noteTerm;
