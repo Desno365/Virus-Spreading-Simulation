@@ -116,7 +116,8 @@ void Area::updateUserInfectionStatus(){
     //Now updates all the users at once.
     for(auto it = usersInArea.begin(); it != usersInArea.end(); ++it){
         shared_ptr<User> user = it->second;
-        user->updateUserInfectionState(usersNearInfected.at(it->first),deltaTime);
+        if(usersNearInfected.count(it->first)>0) user->updateUserInfectionState(usersNearInfected.at(it->first),deltaTime);
+        else cout << "Error in area.cpp in doing map::at";
     }
 }
 
