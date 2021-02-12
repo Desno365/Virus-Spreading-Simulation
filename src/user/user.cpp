@@ -12,12 +12,11 @@
 using namespace std;
 
 User::User(int id, shared_ptr<Position> position, bool isAlreadyInfected):pos(position),id(id),infected(isAlreadyInfected){
-    this->updateStruct();
-    this->infected = false;
     this->immuneTime = 0;
     this->timeNearInfected = 0;
     if(isAlreadyInfected) this->infectedTime = INFECTED_TIME;
     else this->infectedTime = 0;
+    this->updateStruct();
 }
 
 
