@@ -33,7 +33,7 @@ class User
         User(int id,shared_ptr<Position> pos, bool isAlreadyInfected);
         //Create an instance of the user from its struct and the provided velocity.
         //After this the struct is destroyed.
-        User(shared_ptr<user_struct> user_t, float vel);
+        User(user_struct *user_t, float vel);
         //Is the posisiton associated to the user
         shared_ptr<Position> pos;
         //Updates the position associated to this user.
@@ -60,6 +60,8 @@ class User
         //Returns true if this user is at a distance that is lower of infection distance w.r.t (x,y).
         //NOTE: is a <= comparison between the two distances.
         bool isNear(float x, float y, float infectionDistance);
+        //Returns a shared pointer of a user struct starting from the pointer of another user struct. I performs a clone.
+        static shared_ptr<user_struct> getSharedFromStruct(user_struct &user_t);
     private:
         //The unique id of the user.
         int id;

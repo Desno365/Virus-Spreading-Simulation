@@ -1,5 +1,7 @@
 #include "utility.h"
 
+using namespace std;
+
 char * fromStringToCharName(string string){
     char * name_as_chars = (char *)malloc( sizeof(char)* (string.length()+1) );
     strcpy(name_as_chars,string.c_str());
@@ -33,3 +35,4 @@ float generateRandomFloat(float max, float min){
 
     return distr(eng);
 }
+

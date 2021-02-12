@@ -23,8 +23,15 @@ class Area
         //NOTE: if the user is on the border, than it is managed by the previous area.
         //NOTE: this method will then sort the user into the different maps based on its position.
         void addUser(shared_ptr<User> user);
-        //It adds the provided vector of user_struct to the list of users that
-        //are near but outside of this area inside remote areas.
+        //Add to the map the provided content of the vector users.
+        void addUsers(vector<shared_ptr<User>> users);
+        //After exchanging users out of a certain area a vector with new users is passed around, if an area 
+        //find a new user inside its border it removes it from the vector and it adds it locally. The first area that identify
+        //the user on his border will take it.
+        //TODO check that the user is removed not from the copy but byt the actual location.
+        void getNewUserFromRemoteLocation(vector<shared_ptr<User>> *newUsers);
+        //It gets the vector that contains all the received user struct after the comunication, and this area
+        //will take reference to the shared pointer of interest.
         void addNearbyUsersRemote(vector<shared_ptr<user_struct>> nearbyUsersRemote);
         //It adds the provided vector of users to the list of users that
         //are near but outside of this area in local area.
@@ -55,6 +62,7 @@ class Area
         //Returns the row of this area, on the total area division.
         int getRow();
         //Update the position of all the users inside this area.
+        //NOTE: it also resets the previous state of the area.
         void updateUserPositions();
         //Update the infection status of the users.
         void updateUserInfectionStatus();
@@ -72,7 +80,7 @@ class Area
         //Prints on the standard output the actual state of the area.
         void printActualState(FILE *ptr);
         //Return the id of this area.
-        int getID();
+        int getID() { return id; };
     private:
         //Is the id of the area.
         int id;

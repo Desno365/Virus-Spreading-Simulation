@@ -18,6 +18,30 @@ void Area::addUser(shared_ptr<User> user){
     sortUser(user);
 }
 
+void Area::addUsers(vector<shared_ptr<User>> users){
+    for(shared_ptr<User> user : users){
+        addUser(user);
+    }
+}
+
+void Area::getNewUserFromRemoteLocation(vector<shared_ptr<User>> *newUsers){
+    vector<int> selectedUser;
+    for(int i=0; i<(int)newUsers->size() ; i++){
+        shared_ptr<User> user = newUsers->at(i);
+        float x  = user->pos->getX();
+        float y  = user->pos->getY();
+        //Check if the user is inside this area, if is the case take it.
+        if(x>=lowerX && x<=higherX && y>=lowerY && y<=higherY){
+            addUser(user);
+            selectedUser.push_back(i);
+        }
+    }
+    //Remove the selected user from the input vector.
+    for(int i : selectedUser){
+        newUsers->erase(newUsers->begin()+i);
+    }
+}
+
 void Area::setNeighborArea(shared_ptr<NeighborArea> neighborArea,Direction direction){
     this->neighborAreas.insert({direction,neighborArea});
 }
@@ -61,14 +85,14 @@ void Area::updateUserInfectionStatus(){
         bool isNearInfectedUser = false;
         //If is not the case that the user is infected and not immune, we see if it has infected user nearby.
         if(!user->isInfected() && !user->isImmune()){
-            //For everyone checks if near him there exsist a user that is infected.
+            //For everyone checks if near him there exist a user that is infected.
             for(auto entryUsersInArea = this->usersInArea.begin(); entryUsersInArea != this->usersInArea.end() && !isNearInfectedUser ; ++entryUsersInArea){
                 shared_ptr<User> otherUser = entryUsersInArea->second;
                 if(otherUser->isInfected() && user->isNear(otherUser->pos->getX(),otherUser->pos->getY(),infectionDistance)){
                     isNearInfectedUser = true;
                 }
             }
-            if(!isNearInfectedUser && !(userNearInternalBorders.count(user->getId())>0)){//The user is near a border and it is not already near an infected user we have to check also for the neraby users.
+            if(!isNearInfectedUser && userNearInternalBorders.count(user->getId())>0){//The user is near a border and it is not already near an infected user we have to check also for the neraby users.
                 for(auto entryUsersNearbyLocal = this->usersNearbyLocal.begin(); entryUsersNearbyLocal != this->usersNearbyLocal.end() && !isNearInfectedUser ; ++entryUsersNearbyLocal){
                     shared_ptr<User> otherUser = entryUsersNearbyLocal->second;
                     //Here is not necessary to check if the user is infected since the map contains only the infected users from other areas.
@@ -141,7 +165,8 @@ void Area::setBoundaries(int lowerX, int lowerY, int higherX, int higherY){
 
 void Area::addNearbyUsersRemote(vector<shared_ptr<user_struct>> nearbyUsersRemote){
     for(shared_ptr<user_struct> nearbyUser:nearbyUsersRemote){
-        this->usersNearbyRemote.insert( { nearbyUser->id , nearbyUser } );
+        if(nearbyUser->x<=(higherX+infectionDistance) && nearbyUser->x>=(lowerX-infectionDistance) && nearbyUser->y<=(higherY+infectionDistance) && nearbyUser->y>=(lowerY+infectionDistance))
+            this->usersNearbyRemote.insert( { nearbyUser->id , nearbyUser } );
     }
 }
 
@@ -358,6 +383,6 @@ void Area::addUserOutOfArea(Direction direction, shared_ptr<User> user, int bord
         user->pos->updateDirections(newDirX,newDirY);     
 
         //NOTE: is not necessary to add the user to the list of neighbor users since they will be computed
-        //after the exchnage of all the user out of areas.
+        //after the exchange of all the user out of areas.
     }
 }

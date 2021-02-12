@@ -5,6 +5,8 @@
 #include <cstring>
 #include <tuple>
 #include <random>
+#include <map> 
+#include <memory>
 
 using namespace std;
 

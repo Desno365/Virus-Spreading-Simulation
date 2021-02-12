@@ -16,18 +16,19 @@ User::User(int id, shared_ptr<Position> position, bool isAlreadyInfected):pos(po
     this->infected = false;
     this->immuneTime = 0;
     this->timeNearInfected = 0;
-    this->infectedTime = 0;
+    if(isAlreadyInfected) this->infectedTime = INFECTED_TIME;
+    else this->infectedTime = 0;
 }
 
 
-User::User(shared_ptr<user_struct> user_t, float vel){
+User::User(user_struct *user_t, float vel){
     this->pos = make_shared<Position>(user_t->x,user_t->y,vel,user_t->dirX,user_t->dirY);
     this->immuneTime = user_t->immuneTime;
     this->id = user_t->id;
     this->infected = user_t->infected;
     this->infectedTime = this->infected ? user_t->timeCounter : 0 ;
     this->timeNearInfected = !this->infected ? user_t->timeCounter : 0 ;
-    this->user_saved_struct = user_t;
+    this->updateStruct();
     
 }
 
@@ -150,4 +151,17 @@ bool User::isNear(float x, float y, float infectionDistance){
 void User::goBackToIntersection(float coefX, float coefY, float noteTerm){
     this->pos->goBackToIntersection(coefX, coefY, noteTerm);
     this->updateStruct();
+}
+
+shared_ptr<user_struct> User::getSharedFromStruct(user_struct &user_t){
+    shared_ptr<user_struct> returned_user_t = make_shared<user_struct>();
+    returned_user_t->id = user_t.id;
+    returned_user_t->infected = user_t.infected;
+    returned_user_t->immuneTime = user_t.immuneTime;
+    returned_user_t->timeCounter = user_t.timeCounter;
+    returned_user_t->x = user_t.x;
+    returned_user_t->y = user_t.y;
+    returned_user_t->dirX = user_t.dirX;
+    returned_user_t->dirY = user_t.dirY;
+    return returned_user_t;
 }
