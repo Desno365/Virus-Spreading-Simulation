@@ -264,13 +264,13 @@ int main(int argc, char** argv) {
             //Collects out of area users locally
             map<int,vector<shared_ptr<User>>> outOfAreasUserLocallyOnThisArea = area->getOutOfAreaUsersLocal();
             for(auto outOfAreaUserVectors=outOfAreasUserLocallyOnThisArea.begin(); outOfAreaUserVectors!=outOfAreasUserLocallyOnThisArea.end() ; ++outOfAreaUserVectors){
-                vector<shared_ptr<User>> * previousUsers = &(mapOutOfAreaUsersToAreaLocal->at(area->getID()));
+                vector<shared_ptr<User>> * previousUsers = &(mapOutOfAreaUsersToAreaLocal->at(outOfAreaUserVectors->first));
                 previousUsers->insert(previousUsers->end(),outOfAreaUserVectors->second.begin(),outOfAreaUserVectors->second.end());
             }
             //Collects now users out of area that goes to a remote location.
             map<int,vector<shared_ptr<user_struct>>> outOfAreasUserRemotelyOnThisArea = area->getOutOfAreaUsersRemote();
             for(auto outOfAreaUserVectors=outOfAreasUserRemotelyOnThisArea.begin(); outOfAreaUserVectors!=outOfAreasUserRemotelyOnThisArea.end() ; ++outOfAreaUserVectors){
-                vector<shared_ptr<user_struct>> * previousUsers = &(mapOutOfAreaUsersToAreaRemote->at(area->getID()));
+                vector<shared_ptr<user_struct>> * previousUsers = &(mapOutOfAreaUsersToAreaRemote->at(outOfAreaUserVectors->first));
                 previousUsers->insert(previousUsers->end(),outOfAreaUserVectors->second.begin(),outOfAreaUserVectors->second.end());
             }
         }
@@ -352,13 +352,13 @@ int main(int argc, char** argv) {
             //Collects users near border locally.
             map<int,vector<shared_ptr<User>>> nearBorderUserLocallyOnThisArea = area->getNearBorderUsersLocal();
             for(auto nearBorderUserVectors=nearBorderUserLocallyOnThisArea.begin(); nearBorderUserVectors!=nearBorderUserLocallyOnThisArea.end() ; ++nearBorderUserVectors){
-                vector<shared_ptr<User>> * previousUsers = &(mapNearBorderUsersToAreaLocal->at(area->getID()));
+                vector<shared_ptr<User>> * previousUsers = &(mapNearBorderUsersToAreaLocal->at(nearBorderUserVectors->first));
                 previousUsers->insert(previousUsers->end(),nearBorderUserVectors->second.begin(),nearBorderUserVectors->second.end());
             }
             //Collects now users near border which information will go remotely.
             map<int,vector<shared_ptr<user_struct>>> nearBorderUserRemotelyOnThisArea = area->getNearBorderUsersRemote();
             for(auto nearBorderUserVectors=nearBorderUserRemotelyOnThisArea.begin(); nearBorderUserVectors!=nearBorderUserRemotelyOnThisArea.end() ; ++nearBorderUserVectors){
-                vector<shared_ptr<user_struct>> * previousUsers = &(mapNearBorderUsersToAreaRemote->at(area->getID()));
+                vector<shared_ptr<user_struct>> * previousUsers = &(mapNearBorderUsersToAreaRemote->at(nearBorderUserVectors->first));
                 previousUsers->insert(previousUsers->end(),nearBorderUserVectors->second.begin(),nearBorderUserVectors->second.end());
             }
         }

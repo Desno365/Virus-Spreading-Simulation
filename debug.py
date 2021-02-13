@@ -13,15 +13,20 @@ import sys
 # $ echo 0 > /proc/sys/kernel/yama/ptrace_scope
 context.terminal = ["terminator", "-e"]
 
-# Make the program
-r = process("make -B",shell=True)
-print("receiving line")
-makeOutput = r.recvall().decode("utf-8")
-r.wait_for_close()
+# Make the program if requested
+parser = argparse.ArgumentParser()
+parser.add_argument("--compile", help="compile the program",
+                    action="store_true")
+args = parser.parse_args()
+if args.compile:
+    print("Compiling the program:")
+    r = process("make -B",shell=True)
+    makeOutput = r.recvall().decode("utf-8")
+    r.wait_for_close()
 
-if "error" in makeOutput:
-    print(makeOutput)
-    sys.exit("Cannot compile")
+    if "error" in makeOutput:
+        print(makeOutput)
+        sys.exit("Cannot compile")
 
 # Get the pid of the process to attach from the arguments of the program.
 # parser = argparse.ArgumentParser()
@@ -38,6 +43,7 @@ pid = int(r.recvuntil("\n")[:-1])
 # NOTE: the first break has always to coincide with the address of the sleep.
 gdb.attach(pid, """
     break main.cpp:79
+    break main.cpp:175
     c
     set var ifl =7
     c

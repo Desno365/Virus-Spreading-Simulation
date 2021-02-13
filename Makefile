@@ -7,7 +7,7 @@ DEBUGGEDPROCESSOR = 0
 REQUIRED = $(wildcard $(SOURCE)/**/*.cpp)
 CFLAGS = -std=c++11 -Wall -ggdb -O0 -lmpi -I${OPENMPIPATH} -I${SOURCE}
 MPIRUNFLAGS = -np 4
-LAUNCHPARAMETERS = -N 8 -I 2 -W 200 -L 100 -w 100 -l 50 -v 10 -d 10 -t 1 -D 4
+LAUNCHPARAMETERS = -N 100 -I 20 -W 400 -L 200 -w 100 -l 50 -v 10 -d 10 -t 1 -D 8
 
 all: ${OBJECT}
 
