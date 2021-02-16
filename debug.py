@@ -43,7 +43,8 @@ pid = int(r.recvuntil("\n")[:-1])
 # NOTE: the first break has always to coincide with the address of the sleep.
 gdb.attach(pid, """
     break main.cpp:79
-    break main.cpp:175
+    break main.cpp:357
+    break main.cpp:365
     c
     set var ifl =7
     c

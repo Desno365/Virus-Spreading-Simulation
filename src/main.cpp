@@ -318,9 +318,8 @@ int main(int argc, char** argv) {
                     send_vector.push_back(user);
                 }
             }
-            MPI_Barrier(MPI_COMM_WORLD);
             MPI_Gatherv(&send_vector, n_OutOfAreaUsers, mpi_user, gather_buffer_structs, gather_buffer_sizes, displays,mpi_user, i, MPI_COMM_WORLD);
-
+            
             //Now convert the user_structs into Users.
             if(i==my_rank){
                 vector<shared_ptr<User>> newUsers;

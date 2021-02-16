@@ -283,7 +283,7 @@ void Area::addUserNear(shared_ptr<User> user,  shared_ptr<NeighborArea> neighbor
         else{
             //No entries is already present so we insert such a vector.
             users_t = new vector<shared_ptr<user_struct>>;
-            mapAreasToUsersRemote.insert({neighborArea->getID(), *users_t});
+            mapAreasToUsersRemote.insert({neighborArea->getOtherProcessorRank(), *users_t});
         }
         bool isAlreadyPresent = false;
         for(auto it = users_t->begin(); it != users_t->end() && !isAlreadyPresent; ++it){
