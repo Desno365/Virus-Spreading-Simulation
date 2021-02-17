@@ -1,6 +1,7 @@
 import argparse
 from pwn import *
 import sys
+import signal
 # NOTE: if you want to debug another process change the DEBUG option in the Makefile
 # NOTE: you can stop execution in the main method with:(use the DEBUGGED PROCESSOR value in which you are interested in)
 # if(my_rank==0) asm("int $3");   
@@ -38,18 +39,35 @@ r = process("make debug",shell=True)
 r.recvuntil("PID ")
 pid = int(r.recvuntil("\n")[:-1])
 
+def signal_handler(sig, frame):
+    print('You pressed Ctrl+C!')
+    r.kill()
+    sys.exit(0)
+
+signal.signal(signal.SIGINT, signal_handler)
+
 # Attach GDB to the program, here you can specify the instructions that gbd has to execute before
 # returning the control.
 # NOTE: the first break has always to coincide with the address of the sleep.
+print("Attaching to " + str(pid))
 gdb.attach(pid, """
     break main.cpp:79
-    break main.cpp:357
-    break main.cpp:365
+    break main.cpp:455
+    break main.cpp:458
     c
     set var ifl =7
     c
 """)
 
-# Wait for the process to terminate execution
-r.wait_for_close()
+while(True):
+    # Get all the output:
+    # exeOutput = r.recvall().decode("utf-8")
+    recv = r.recvline()
+    print(recv)
+
+
+# # Wait for the process to terminate execution
+# r.wait_for_close()
+# print(exeOutput)
+
 

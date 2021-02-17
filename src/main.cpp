@@ -152,8 +152,56 @@ int main(int argc, char** argv) {
     srand (time(NULL));
 
     //Register the required MPI types. 
-    MPI_Datatype mpi_user = User::getMPIType();
-
+    // MPI_Datatype mpi_user = User::getMPIType();
+    user_struct user_t;
+    MPI_Datatype mpi_user;
+    //Set the structure length.
+    int struct_len = 8;
+    int block_lens[struct_len];
+    //Compute the displacement of elements in the struct.
+    MPI_Datatype types[struct_len];
+    MPI_Aint displacements[struct_len];
+    //Add id.
+    block_lens[0] = 1;
+    types[0] = MPI_INT;
+    displacements[0] = (size_t) &(user_t.id) - (size_t) &user_t;
+    //Add the position of the user.
+    //Add x.
+    block_lens[1] = 1;
+    types[1] = MPI_FLOAT;
+    displacements[1] = (size_t) &(user_t.x) - (size_t) &user_t;
+    //Add y.
+    block_lens[2] = 1;
+    types[2] = MPI_FLOAT;
+    displacements[2] = (size_t) &(user_t.y) - (size_t) &user_t;
+    //Add dirX.
+    block_lens[3] = 1;
+    types[3] = MPI_FLOAT;
+    displacements[0] = (size_t) &(user_t.dirX) - (size_t) &user_t;
+    //Add dirY
+    block_lens[4] = 1;
+    types[4] = MPI_FLOAT;
+    displacements[4] = (size_t) &(user_t.dirY) - (size_t) &user_t;
+    //Add the infection state of the user.
+    block_lens[5] = 1;
+    types[5] = MPI_C_BOOL;
+    displacements[5] = (size_t) &(user_t.infected) - (size_t) &user_t;
+    //Add the immune time of the user.
+    block_lens[6] = 1;
+    types[6] = MPI_INT;
+    displacements[6] = (size_t) &(user_t.immuneTime) - (size_t) &user_t;
+    //Add the time.
+    block_lens[7] = 1;
+    types[7] = MPI_INT;
+    displacements[7] = (size_t) &(user_t.timeCounter) - (size_t) &user_t;
+    int res = MPI_Type_create_struct(struct_len, block_lens, displacements, types, &mpi_user);
+    if(res!=MPI_SUCCESS){
+        cout<<"Error in generating mpi datatype "<<res<<"\n";
+    }
+    res = MPI_Type_commit(&mpi_user);
+    if(res!=MPI_SUCCESS){
+        cout<<"Error in generating mpi datatype "<<res<<"\n";
+    }
 
     //Get the number of processors in the world
     int world_size;
@@ -189,12 +237,12 @@ int main(int argc, char** argv) {
         
         for(int i=0;i<user_per_area;i++){
             //Generate random coordinates inside this region.
-            int userX,userY;
+            float userX,userY;
             tie(userX,userY) = area->getRadomCoordinates();
             //Generate a random direction vector.
-            int userDirX,userDirY;
+            float userDirX,userDirY;
             tie(userDirX,userDirY) = area->getRadomDirection();
-            shared_ptr<Position> userPos = make_shared<Position>(userX,userY,v,userDirX,userDirX);
+            shared_ptr<Position> userPos = make_shared<Position>(userX,userY,v,userDirX,userDirY);
             //Compute a unique user ID
             int userID = my_rank * N + i;
             //Set infected the first generated users per area
@@ -241,9 +289,8 @@ int main(int argc, char** argv) {
 
     //Now starts the main loop.
     for(int elapsedTime = 0; elapsedTime < total_seconds; elapsedTime+=t){
-        //Wait fo everyone to reach this point.
-        MPI_Barrier(MPI_COMM_WORLD);
         if ( (elapsedTime / SECONDS_IN_DAY) > next_day_print_status ){
+            if(my_rank==0) cout<<"Printing spreading infections status at day " << next_day_print_status << "\n";
             string recap = "The state of the infection spreading at day "+ to_string(next_day_print_status) + " of the computation is:\n";
             str = fromStringToCharName(recap);
             fprintf(fptr,"%s", str);
@@ -253,10 +300,12 @@ int main(int argc, char** argv) {
             }
             str = fromStringToCharName("\n");
             fprintf(fptr,"%s", str);
+            fflush(fptr);
             free(str);
             next_day_print_status++;
-            MPI_Barrier(MPI_COMM_WORLD);
         }
+        //Wait fo everyone to reach this point.
+        MPI_Barrier(MPI_COMM_WORLD);
 
         //First exchange and update informations about users out of area.
         for(shared_ptr<Area> area:processor_areas){
@@ -282,7 +331,7 @@ int main(int argc, char** argv) {
         //Now in order based on the processor id performs gathers operations to get from each processors informations about the out of area users:
         // - First the at the processor's turn waits for and int for each processors that specify how mush user's structs it will send;
         // - Allocate a buffer of a proportional dimension in order to receives such structures.
-        //NOTE: follow this link https://www.mcs.anl.gov/research/projects/mpi/mpi-standard/mpi-report-1.1/node70.htm.
+        //NOTE: follow this link https://www.mcs.anl.gov/research/projects/mpi/mpi-standard/mpi-report-1.1/node70.htm or here https://stackoverflow.com/questions/31890523/how-to-use-mpi-gatherv-for-collecting-strings-of-diiferent-length-from-different.
         for(int i=0; i<world_size ; i++){
             //Waits for everyone to reach this point
             MPI_Barrier(MPI_COMM_WORLD);
@@ -303,7 +352,7 @@ int main(int argc, char** argv) {
 
             //Now we can receive from the remote location the user struct of the user out of areas.
             //Is the datatype for the vector of user struct that has to be sent.
-            vector<user_struct> send_vector;
+            user_struct send_vector[n_OutOfAreaUsers];
             int receiving_size = 0;
             if(i==my_rank){
                 //If this is my turn then I have to gather information from other nodes.
@@ -313,12 +362,14 @@ int main(int argc, char** argv) {
                 }
                 gather_buffer_structs = (user_struct *) malloc(sizeof(user_struct) * receiving_size);
             }else{
+                int index = 0;
                 for(shared_ptr<user_struct> user_t : mapOutOfAreaUsersToAreaRemote->at(i)){
                     user_struct user = *(user_t.get());//TODO the user_struct is automatically destroyed at the end of the loop??
-                    send_vector.push_back(user);
+                    send_vector[index] = user;
+                    index++;
                 }
             }
-            MPI_Gatherv(&send_vector, n_OutOfAreaUsers, mpi_user, gather_buffer_structs, gather_buffer_sizes, displays,mpi_user, i, MPI_COMM_WORLD);
+            MPI_Gatherv(&send_vector[0], n_OutOfAreaUsers, mpi_user, gather_buffer_structs, gather_buffer_sizes, displays,mpi_user, i, MPI_COMM_WORLD);
             
             //Now convert the user_structs into Users.
             if(i==my_rank){
@@ -387,22 +438,25 @@ int main(int argc, char** argv) {
 
             //Now we can receive from the remote location the user struct of the user out of areas.
             //Is the datatype for the vector of user struct that has to be sent.
-            vector<user_struct> send_vector;
+            user_struct * send_vector=NULL;
             int receiving_size = 0;
             if(i==my_rank){
                 //If this is my turn then I have to gather information from other nodes.
                 for(int i=0; i<world_size ; i++){//TODO error when i==my_rank???
-                    receiving_size += gather_buffer_sizes[i];
                     displays[i] = receiving_size;
+                    receiving_size += gather_buffer_sizes[i];
                 }
-                gather_buffer_structs = (user_struct *) malloc(sizeof(user_struct) * receiving_size);
+                gather_buffer_structs = (user_struct *) calloc(receiving_size,sizeof(user_struct));
             }else{
-                for(shared_ptr<user_struct> user_t : mapNearBorderUsersToAreaRemote->at(i)){
-                    user_struct user = *(user_t.get());//TODO the user_struct is automatically destroyed at the end of the loop?? BY dereferencing it should be copied.
-                    send_vector.push_back(user);
+                int index = 0;
+                send_vector = (user_struct *) malloc(sizeof(user_struct)*n_nearbyUsersToRemote);
+                for(shared_ptr<user_struct> user_t : mapOutOfAreaUsersToAreaRemote->at(i)){
+                    user_struct user = *(user_t.get());//TODO the user_struct is automatically destroyed at the end of the loop??
+                    send_vector[index] = user;
+                    index++;
                 }
             }
-            MPI_Gatherv(&send_vector, n_nearbyUsersToRemote, mpi_user, gather_buffer_structs, gather_buffer_sizes, displays,mpi_user, i, MPI_COMM_WORLD);
+            MPI_Gatherv(send_vector, n_nearbyUsersToRemote, mpi_user, gather_buffer_structs, gather_buffer_sizes, displays,mpi_user, i, MPI_COMM_WORLD);
 
             //Now convert the user_structs into shared pointer of user struct.
             if(i==my_rank){
@@ -416,6 +470,7 @@ int main(int argc, char** argv) {
                 }
             }
             //Free the buffer used during the comunication.
+            if(send_vector!=NULL) free(send_vector);
             if(gather_buffer_sizes!=NULL) free(gather_buffer_sizes);
             if(gather_buffer_structs!=NULL) free(gather_buffer_structs);  
             if(displays!=NULL) free(displays);  

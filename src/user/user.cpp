@@ -51,16 +51,16 @@ void User::updateStruct(){
 }
 
 User::~User(){
-    //The shared pointer of the position destructor is automatically invoked upond deletion.
+    //The shared pointer of the position destructor is automatically invoked upon deletion.
 }
 
 MPI_Datatype User::getMPIType(){
     user_struct user_t;
     MPI_Datatype mpi_user;
-    //Set the structure lenght.
+    //Set the structure length.
     int struct_len = 8;
     int block_lens[struct_len];
-    //Compute the displacment of elements in the struct.
+    //Compute the displacement of elements in the struct.
     MPI_Datatype types[struct_len];
     MPI_Aint displacements[struct_len];
     //Add id.

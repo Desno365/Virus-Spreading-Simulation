@@ -9,8 +9,8 @@ void Position::setDirection(float dirX, float dirY){
 
 void Position::updatePosition(int deltaTime){
     //TODO change this formula if you use direction with float
-    this->x += deltaTime * this->vel * dirX;
-    this->y += deltaTime * this->vel * dirY;
+    this->x += ((float)deltaTime) * this->vel * dirX;
+    this->y += ((float)deltaTime) * this->vel * dirY;
 }
 
 tuple<float,float> Position::getCoordinates(){

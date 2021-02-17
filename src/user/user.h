@@ -16,7 +16,7 @@ typedef struct user_struct_t {
     //Is the id of the user.
     int id;
     //Is the position struct of the user.
-    int x,y,dirX,dirY;
+    float x,y,dirX,dirY;
     //Indicates if the user is actually infected.
     bool infected;
     //Is the remaining immune time of the user
