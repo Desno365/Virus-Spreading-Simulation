@@ -22,6 +22,7 @@ tuple<int,int> fromDirectionToVector(Direction direction){
     case East:
         return {1,0};    
     default:
+        cout<<"Error in asking direction from vector "<< direction<< "\n";
         return {0,0};
     }
 }

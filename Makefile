@@ -6,8 +6,8 @@ OPENMPIPATH = /usr/lib/x86_64-linux-gnu/openmpi/include
 DEBUGGEDPROCESSOR = 1
 REQUIRED = $(wildcard $(SOURCE)/**/*.cpp)
 CFLAGS = -std=c++11 -Wall -ggdb -O0 -lmpi -I${OPENMPIPATH} -I${SOURCE}
-MPIRUNFLAGS = -np 6
-LAUNCHPARAMETERS = -N 1000 -I 100 -W 300 -L 100 -w 50 -l 25 -v 100 -d 10 -t 1 -D 90
+MPIRUNFLAGS = -np 4
+LAUNCHPARAMETERS = -N 48 -I 10 -W 300 -L 100 -w 50 -l 25 -v 100 -d 10 -t 1 -D 90
 
 all: ${OBJECT}
 

@@ -51,9 +51,8 @@ signal.signal(signal.SIGINT, signal_handler)
 # NOTE: the first break has always to coincide with the address of the sleep.
 print("Attaching to " + str(pid))
 gdb.attach(pid, """
-    break main.cpp:79
-    break main.cpp:455
-    break main.cpp:458
+    break main.cpp:82
+    break area.cpp:331
     c
     set var ifl =7
     c

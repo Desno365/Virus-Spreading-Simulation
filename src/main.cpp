@@ -42,8 +42,11 @@ bool cmdOptionExists(char** begin, char** end, const string& option)
 //Returns the total number of areas. It returns 0 if they are not multiple.
 int getNumberOfAreas(int W,int L, int w,int l);
 
-//Returns the lenght of row in which the map is divide when generating the areas.
+//Returns the length of row in which the map is divide when generating the areas.
 int getStride(int W,int w);
+
+//Returns the length of column in which the map is divide when generating the areas.
+int getStrideVertical(int L,int l);
 
 //Returns the vector of Area associated to the provided processor_rank.
 vector<shared_ptr<Area>> getArea(int numberOfAreas, int processor_rank, int world_size,int stride, float infectionDistance, int deltaTime);
@@ -177,7 +180,7 @@ int main(int argc, char** argv) {
     //Add dirX.
     block_lens[3] = 1;
     types[3] = MPI_FLOAT;
-    displacements[0] = (size_t) &(user_t.dirX) - (size_t) &user_t;
+    displacements[3] = (size_t) &(user_t.dirX) - (size_t) &user_t;
     //Add dirY
     block_lens[4] = 1;
     types[4] = MPI_FLOAT;
@@ -230,7 +233,7 @@ int main(int argc, char** argv) {
     if(my_rank<infected_left_out) infected_users_area++;
     for(shared_ptr<Area> area:processor_areas){
         int lowerX = w * area->getCol();
-        int lowerY = l * area->getRow();
+        int lowerY = l * (getStrideVertical(L,l)-1-area->getRow());
         int higherX = lowerX + w;
         int higherY = lowerY + l;
         area->setBoundaries(lowerX,lowerY,higherX,higherY);
@@ -252,7 +255,7 @@ int main(int argc, char** argv) {
         }
     }
 
-    //NOTE: users starts to infect other users the step next to the one in which they've becomed infected.
+    //NOTE: users starts to infect other users the step next to the one in which they've become infected.
     //This is the total duration of the computation.
     int total_seconds = D * SECONDS_IN_DAY;
     //Is the last day on which we have print the status.
@@ -383,6 +386,7 @@ int main(int argc, char** argv) {
                 }
                 //Check that such vector is now empty
                 if(!newUsers.empty()){
+                    //TODO put the users inside the nearest area.
                     cout << "Error in processor " << my_rank << " since the vector new received new users from remote locations is not empty!\n";
                     MPI_Finalize();
                     return -1;
@@ -442,15 +446,15 @@ int main(int argc, char** argv) {
             int receiving_size = 0;
             if(i==my_rank){
                 //If this is my turn then I have to gather information from other nodes.
-                for(int i=0; i<world_size ; i++){//TODO error when i==my_rank???
+                for(int i=0; i<world_size ; i++){
                     displays[i] = receiving_size;
                     receiving_size += gather_buffer_sizes[i];
                 }
                 gather_buffer_structs = (user_struct *) calloc(receiving_size,sizeof(user_struct));
             }else{
                 int index = 0;
-                send_vector = (user_struct *) malloc(sizeof(user_struct)*n_nearbyUsersToRemote);
-                for(shared_ptr<user_struct> user_t : mapOutOfAreaUsersToAreaRemote->at(i)){
+                send_vector = (user_struct *) calloc(n_nearbyUsersToRemote,sizeof(user_struct));
+                for(shared_ptr<user_struct> user_t : mapNearBorderUsersToAreaRemote->at(i)){
                     user_struct user = *(user_t.get());//TODO the user_struct is automatically destroyed at the end of the loop??
                     send_vector[index] = user;
                     index++;
@@ -532,6 +536,10 @@ int getStride(int W,int w){
     return W/w;
 }
 
+int getStrideVertical(int L,int l){
+    return L/l;
+}
+
 //NOTE: the ids of the areas are assigned from left to right, top to bottom in increasing order.
 vector<shared_ptr<Area>> getArea(int numberOfAreas, int processor_rank, int world_size,int stride, float infectionDistance, int deltaTime){
     vector<shared_ptr<Area>> areas;
@@ -566,8 +574,8 @@ vector<shared_ptr<Area>> getArea(int numberOfAreas, int processor_rank, int worl
                     if(neighborID<maxAreasForProcessor*(leftOutAreas)){
                         processorArea = neighborID/maxAreasForProcessor;
                     }else{
-                        neighborID-=leftOutAreas*maxAreasForProcessor;
-                        processorArea = leftOutAreas + neighborID/minAreasForProcessor;
+                        int temp = neighborID-leftOutAreas*maxAreasForProcessor;
+                        processorArea = leftOutAreas + temp/minAreasForProcessor;
                     }
                     //TODO check the value of the neighborID.
                     shared_ptr<NeighborArea> neighborArea = make_shared<NeighborArea>(processorArea,neighborID);

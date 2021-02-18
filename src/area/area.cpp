@@ -97,7 +97,7 @@ void Area::updateUserInfectionStatus(){
                         isNearInfectedUser = true;
                     }
                 }
-                if(!isNearInfectedUser){//Check if the preivous for has alreadya found a nearby infected user.
+                if(!isNearInfectedUser){//Check if the previous for has already found a nearby infected user.
                     //Check now that the user is not near an infected user from a remote source.
                     //Here is not necessary to check if the user is infected since the map contains only the infected users from other areas.
                     for(auto entryUsersNearbyRemote = this->usersNearbyRemote.begin(); entryUsersNearbyRemote != this->usersNearbyRemote.end() && !isNearInfectedUser ; ++entryUsersNearbyRemote){
@@ -331,7 +331,7 @@ void Area::computeOutOfAreaUserMap(){
     }
 }
 
-void Area::addUserOutOfArea(Direction direction, shared_ptr<User> user, int borderCoordinates){
+void Area::addUserOutOfArea(Direction direction, shared_ptr<User> user, float borderCoordinates){
     //Check if a neighorbArea exists
     if(neighborAreas.count(direction)>0){
         //Remove the user from the list of the user in area.
@@ -354,7 +354,7 @@ void Area::addUserOutOfArea(Direction direction, shared_ptr<User> user, int bord
             //so we populate the map mapOutOfAreasToUsersRemote.
             vector<shared_ptr<user_struct>> * users_t;
             if(mapOutOfAreasToUsersRemote.count(neighborArea->getID())){
-                users_t = &(mapOutOfAreasToUsersRemote.at(neighborArea->getID()));
+                users_t = &(mapOutOfAreasToUsersRemote.at(neighborArea->getOtherProcessorRank()));
             }else{
                 users_t = new vector<shared_ptr<user_struct>>;
                 mapOutOfAreasToUsersRemote.insert( {neighborArea->getOtherProcessorRank(), *users_t});
@@ -372,7 +372,10 @@ void Area::addUserOutOfArea(Direction direction, shared_ptr<User> user, int bord
             //Set the user coordinates to be on the nearest border, by doing the intersection between plane.
             int coefX,coefY;
             tie(coefX,coefY) = fromDirectionToVector(direction);
-            user->goBackToIntersection(coefX/borderCoordinates, coefY/borderCoordinates,1);
+            if(borderCoordinates==0){
+                user->goBackToIntersection(coefX, coefY,0);
+            }else
+                user->goBackToIntersection(coefX/borderCoordinates, coefY/borderCoordinates,-1);
         }
 
         //Now update the direction of the user such that at the next iteration it will remains inside this region.
@@ -383,14 +386,38 @@ void Area::addUserOutOfArea(Direction direction, shared_ptr<User> user, int bord
         float vel = user->pos->getVel();
         do
         {
-            tie(newDirX,newDirY) = getRadomCoordinates();
+            tie(newDirX,newDirY) = getRadomDirection();
             nextX = x + deltaTime * vel * newDirX;
             nextY = y + deltaTime * vel * newDirY;
-        } while (nextX>=higherX || nextX<=lowerX || nextY>=higherY || nextY<=lowerY);
+        } while (checkIfCoordinatesAreOKWithDirection(direction,nextX,nextY));
         user->pos->updateDirections(newDirX,newDirY);     
 
         //NOTE: is not necessary to add the user to the list of neighbor users since they will be computed
         //after the exchange of all the user out of areas.
+    }
+}
+
+bool Area::checkIfCoordinatesAreOKWithDirection(Direction direction, float x, float y){
+    switch (direction)
+    {
+    case NorthWest:
+        return x>=lowerX && y<=higherY;
+    case North:
+        return y<=higherY;
+    case NorthEast:
+        return x<=higherX && y<=higherY;
+    case West:
+        return x>=lowerX;
+    case East:
+        return x<=higherX;
+    case SouthWest:
+        return x>=lowerX && y>=lowerY;
+    case South:
+        return y>=lowerY;
+    case SouthEast:
+        return x<=higherX && y>=lowerY;
+    default:
+        return false;
     }
 }
 

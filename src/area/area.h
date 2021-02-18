@@ -124,7 +124,7 @@ class Area
         //to which the infected user has to be sent locally.
         map<int,vector<shared_ptr<User>>>  mapAreasToUsersLocal;
         //It is recomputed each time computeNearBorderUserMap(), and contains the association of the id of the process
-        //to which the infected user has to be sent remotly.
+        //to which the infected user has to be sent remotely.
         map<int,vector<shared_ptr<user_struct>>>  mapAreasToUsersRemote;
         //Add a user to one of the previous maps, based on the neighbor area, it will only work on infected user.
         void addUserNear(shared_ptr<User> user, shared_ptr<NeighborArea> neighborArea);
@@ -137,7 +137,10 @@ class Area
         map<int,vector<shared_ptr<user_struct>>>  mapOutOfAreasToUsersRemote;
         //Add the user to one of the previous map( if the user has not reached a border) based on the neighbor area
         //that is present inside the neighboar areas map at the correspondent direction.
-        void addUserOutOfArea(Direction direction, shared_ptr<User> user, int borderCoordinates);
+        void addUserOutOfArea(Direction direction, shared_ptr<User> user, float borderCoordinates);
+
+        //Returns true if the given coordinates are opposite to the given direction.
+        bool checkIfCoordinatesAreOKWithDirection(Direction direction, float x, float y);
     protected:
 };
 
