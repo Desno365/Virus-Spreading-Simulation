@@ -52,7 +52,11 @@ signal.signal(signal.SIGINT, signal_handler)
 print("Attaching to " + str(pid))
 gdb.attach(pid, """
     break main.cpp:82
-    break area.cpp:331
+    break main.cpp:371
+    break main.cpp:373
+    break main.cpp:375
+    break main.cpp:377
+    break main.cpp:399
     c
     set var ifl =7
     c

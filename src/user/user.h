@@ -38,6 +38,8 @@ class User
         shared_ptr<Position> pos;
         //Updates the position associated to this user.
         void updateUserPosition(int deltaTime);
+        //Updates the direction associated to this user.
+        void updateUserDirection(float newDirX, float newDirY);
         //It requires the elapsed delta time to update eventually the counter and a boolean that says 
         //if it is actually near an infected user: this field is discarded if the user is immune or infected.
         //New infected user will start to infect other users only at the next step.

@@ -171,19 +171,19 @@ int main(int argc, char** argv) {
     //Add the position of the user.
     //Add x.
     block_lens[1] = 1;
-    types[1] = MPI_FLOAT;
+    types[1] = MPI::FLOAT;
     displacements[1] = (size_t) &(user_t.x) - (size_t) &user_t;
     //Add y.
     block_lens[2] = 1;
-    types[2] = MPI_FLOAT;
+    types[2] = MPI::FLOAT;
     displacements[2] = (size_t) &(user_t.y) - (size_t) &user_t;
     //Add dirX.
     block_lens[3] = 1;
-    types[3] = MPI_FLOAT;
+    types[3] = MPI::FLOAT;
     displacements[3] = (size_t) &(user_t.dirX) - (size_t) &user_t;
     //Add dirY
     block_lens[4] = 1;
-    types[4] = MPI_FLOAT;
+    types[4] = MPI::FLOAT;
     displacements[4] = (size_t) &(user_t.dirY) - (size_t) &user_t;
     //Add the infection state of the user.
     block_lens[5] = 1;
@@ -229,7 +229,7 @@ int main(int argc, char** argv) {
     if(my_rank<user_left_out) user_per_area++;
     //Compute the infected users per area.
     int infected_users_area = I / number_of_areas;
-    int infected_left_out = i % number_of_areas;
+    int infected_left_out = I % number_of_areas;
     if(my_rank<infected_left_out) infected_users_area++;
     for(shared_ptr<Area> area:processor_areas){
         int lowerX = w * area->getCol();
@@ -292,7 +292,7 @@ int main(int argc, char** argv) {
 
     //Now starts the main loop.
     for(int elapsedTime = 0; elapsedTime < total_seconds; elapsedTime+=t){
-        if ( (elapsedTime / SECONDS_IN_DAY) > next_day_print_status ){
+        if ( (elapsedTime / SECONDS_IN_DAY) >= next_day_print_status ){
             if(my_rank==0) cout<<"Printing spreading infections status at day " << next_day_print_status << "\n";
             string recap = "The state of the infection spreading at day "+ to_string(next_day_print_status) + " of the computation is:\n";
             str = fromStringToCharName(recap);
@@ -314,16 +314,16 @@ int main(int argc, char** argv) {
         for(shared_ptr<Area> area:processor_areas){
             area->computeOutOfAreaUserMap();
             //Collects out of area users locally
-            map<int,vector<shared_ptr<User>>> outOfAreasUserLocallyOnThisArea = area->getOutOfAreaUsersLocal();
+            map<int,shared_ptr<vector<shared_ptr<User>>>> outOfAreasUserLocallyOnThisArea = area->getOutOfAreaUsersLocal();
             for(auto outOfAreaUserVectors=outOfAreasUserLocallyOnThisArea.begin(); outOfAreaUserVectors!=outOfAreasUserLocallyOnThisArea.end() ; ++outOfAreaUserVectors){
                 vector<shared_ptr<User>> * previousUsers = &(mapOutOfAreaUsersToAreaLocal->at(outOfAreaUserVectors->first));
-                previousUsers->insert(previousUsers->end(),outOfAreaUserVectors->second.begin(),outOfAreaUserVectors->second.end());
+                previousUsers->insert(previousUsers->end(),outOfAreaUserVectors->second->begin(),outOfAreaUserVectors->second->end());
             }
             //Collects now users out of area that goes to a remote location.
-            map<int,vector<shared_ptr<user_struct>>> outOfAreasUserRemotelyOnThisArea = area->getOutOfAreaUsersRemote();
+            map<int,shared_ptr<vector<shared_ptr<user_struct>>>> outOfAreasUserRemotelyOnThisArea = area->getOutOfAreaUsersRemote();
             for(auto outOfAreaUserVectors=outOfAreasUserRemotelyOnThisArea.begin(); outOfAreaUserVectors!=outOfAreasUserRemotelyOnThisArea.end() ; ++outOfAreaUserVectors){
                 vector<shared_ptr<user_struct>> * previousUsers = &(mapOutOfAreaUsersToAreaRemote->at(outOfAreaUserVectors->first));
-                previousUsers->insert(previousUsers->end(),outOfAreaUserVectors->second.begin(),outOfAreaUserVectors->second.end());
+                previousUsers->insert(previousUsers->end(),outOfAreaUserVectors->second->begin(),outOfAreaUserVectors->second->end());
             }
         }
         //Dispatch out of area users among local area.
@@ -367,8 +367,17 @@ int main(int argc, char** argv) {
             }else{
                 int index = 0;
                 for(shared_ptr<user_struct> user_t : mapOutOfAreaUsersToAreaRemote->at(i)){
-                    user_struct user = *(user_t.get());//TODO the user_struct is automatically destroyed at the end of the loop??
-                    send_vector[index] = user;
+                    if(i==0 && (user_t.get()->x<0 || user_t.get()->x>100 || user_t.get()->y<50 || user_t.get()->y>100)){
+                        cout<< "Error in sending to 0 from "<< my_rank<<"\n";
+                    }else if(i==1 && (user_t.get()->x<100 || user_t.get()->x>200 || user_t.get()->y<50 || user_t.get()->y>100)){
+                        cout<< "Error in sending to 1 from "<< my_rank<<"\n";
+                    }else if(i==2 && (user_t.get()->x<0 || user_t.get()->x>100 || user_t.get()->y<0 || user_t.get()->y>50)){
+                        cout<< "Error in sending to 2 from "<< my_rank<<"\n";
+                    }else if(i==3 && (user_t.get()->x<100 || user_t.get()->x>200 || user_t.get()->y<0 || user_t.get()->y>50)){
+                        cout<< "Error in sending to 3 from "<< my_rank<<"\n";
+                    }
+                    user_struct user = *(user_t.get());
+                    send_vector[index] = user;   
                     index++;
                 }
             }
@@ -388,8 +397,6 @@ int main(int argc, char** argv) {
                 if(!newUsers.empty()){
                     //TODO put the users inside the nearest area.
                     cout << "Error in processor " << my_rank << " since the vector new received new users from remote locations is not empty!\n";
-                    MPI_Finalize();
-                    return -1;
                 }
             }
             //Free the buffer used during the comunication.
@@ -404,16 +411,16 @@ int main(int argc, char** argv) {
         for(shared_ptr<Area> area : processor_areas){
             area->computeNearBorderUserMap();
             //Collects users near border locally.
-            map<int,vector<shared_ptr<User>>> nearBorderUserLocallyOnThisArea = area->getNearBorderUsersLocal();
+            map<int,shared_ptr<vector<shared_ptr<User>>>> nearBorderUserLocallyOnThisArea = area->getNearBorderUsersLocal();
             for(auto nearBorderUserVectors=nearBorderUserLocallyOnThisArea.begin(); nearBorderUserVectors!=nearBorderUserLocallyOnThisArea.end() ; ++nearBorderUserVectors){
                 vector<shared_ptr<User>> * previousUsers = &(mapNearBorderUsersToAreaLocal->at(nearBorderUserVectors->first));
-                previousUsers->insert(previousUsers->end(),nearBorderUserVectors->second.begin(),nearBorderUserVectors->second.end());
+                previousUsers->insert(previousUsers->end(),nearBorderUserVectors->second->begin(),nearBorderUserVectors->second->end());
             }
             //Collects now users near border which information will go remotely.
-            map<int,vector<shared_ptr<user_struct>>> nearBorderUserRemotelyOnThisArea = area->getNearBorderUsersRemote();
+            map<int,shared_ptr<vector<shared_ptr<user_struct>>>> nearBorderUserRemotelyOnThisArea = area->getNearBorderUsersRemote();
             for(auto nearBorderUserVectors=nearBorderUserRemotelyOnThisArea.begin(); nearBorderUserVectors!=nearBorderUserRemotelyOnThisArea.end() ; ++nearBorderUserVectors){
                 vector<shared_ptr<user_struct>> * previousUsers = &(mapNearBorderUsersToAreaRemote->at(nearBorderUserVectors->first));
-                previousUsers->insert(previousUsers->end(),nearBorderUserVectors->second.begin(),nearBorderUserVectors->second.end());
+                previousUsers->insert(previousUsers->end(),nearBorderUserVectors->second->begin(),nearBorderUserVectors->second->end());
             }
         }
         //Dispatch User on the border information locally.

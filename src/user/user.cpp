@@ -119,6 +119,11 @@ void User::updateUserPosition(int deltaTime){
     this->updateStruct();
 }
 
+void User::updateUserDirection(float newDirX, float newDirY){
+    this->pos->updateDirections(newDirX,newDirY);
+    this->updateStruct();
+}
+
 void User::updateUserInfectionState(bool isNearAnInfected, int deltaTime){
     if(this->infected){
         this->infectedTime = max( this->infectedTime-deltaTime , 0 );

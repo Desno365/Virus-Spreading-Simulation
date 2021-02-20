@@ -2,11 +2,6 @@
 
 Position::Position(float x, float y, float vel, float dirX, float dirY):x(x),y(y),vel(vel),dirX(dirX),dirY(dirY){}
 
-void Position::setDirection(float dirX, float dirY){
-    this->dirX = dirX;
-    this->dirY = dirY;
-}
-
 void Position::updatePosition(int deltaTime){
     //TODO change this formula if you use direction with float
     this->x += ((float)deltaTime) * this->vel * dirX;

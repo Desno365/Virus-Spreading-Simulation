@@ -70,7 +70,7 @@ void Area::updateUserPositions(){
     this->resetState();
     for ( auto it = this->usersInArea.begin(); it != this->usersInArea.end(); ++it  )
     {
-        it->second->pos->updatePosition(deltaTime);
+        it->second->updateUserPosition(deltaTime);
         this->sortUser(it->second);
     } 
 }
@@ -133,19 +133,19 @@ tuple<float,float> Area::getRadomDirection(){
     return { rand1/term, rand2/term};
 }
 
-map<int,vector<shared_ptr<User>>> Area::getOutOfAreaUsersLocal(){
+map<int,shared_ptr<vector<shared_ptr<User>>>> Area::getOutOfAreaUsersLocal(){
     return mapOutOfAreasToUsersLocal;
 }
 
-map<int,vector<shared_ptr<user_struct>>> Area::getOutOfAreaUsersRemote(){
+map<int,shared_ptr<vector<shared_ptr<user_struct>>>> Area::getOutOfAreaUsersRemote(){
     return mapOutOfAreasToUsersRemote;
 }
 
-map<int,vector<shared_ptr<User>>> Area::getNearBorderUsersLocal(){
+map<int,shared_ptr<vector<shared_ptr<User>>>> Area::getNearBorderUsersLocal(){
     return mapAreasToUsersLocal;
 }
 
-map<int,vector<shared_ptr<user_struct>>> Area::getNearBorderUsersRemote(){
+map<int,shared_ptr<vector<shared_ptr<user_struct>>>> Area::getNearBorderUsersRemote(){
     return mapAreasToUsersRemote;
 }
 
@@ -268,22 +268,22 @@ void Area::computeNearBorderUserMap(){
 //NOTE: locally the user in the list cannot be repeated. Instead we need to check for remote destination.
 void Area::addUserNear(shared_ptr<User> user,  shared_ptr<NeighborArea> neighborArea){
     if(neighborArea->isLocal(my_processor_rank)){
-        vector<shared_ptr<User>> * users;
-        if(mapAreasToUsersLocal.count(neighborArea->getID())) users = &(mapAreasToUsersLocal.at(neighborArea->getID()));
+        shared_ptr<vector<shared_ptr<User>>> users;
+        if(mapAreasToUsersLocal.count(neighborArea->getID())) users = mapAreasToUsersLocal.at(neighborArea->getID());
         else{
             //No entries is already present so we insert such a vector.
-            users = new vector<shared_ptr<User>>;
-            mapAreasToUsersLocal.insert({neighborArea->getID(), *users});
+            users = make_shared<vector<shared_ptr<User>>>();
+            mapAreasToUsersLocal.insert({neighborArea->getID(), users});
         }
         users->push_back(user);
     }else{
         //We have to send the information remotely.
-        vector<shared_ptr<user_struct>> * users_t;
-        if(mapAreasToUsersRemote.count(neighborArea->getID())) users_t = &(mapAreasToUsersRemote.at(neighborArea->getID()));
+        shared_ptr<vector<shared_ptr<user_struct>>> users_t;
+        if(mapAreasToUsersRemote.count(neighborArea->getOtherProcessorRank())) users_t = mapAreasToUsersRemote.at(neighborArea->getOtherProcessorRank());
         else{
             //No entries is already present so we insert such a vector.
-            users_t = new vector<shared_ptr<user_struct>>;
-            mapAreasToUsersRemote.insert({neighborArea->getOtherProcessorRank(), *users_t});
+            users_t = make_shared<vector<shared_ptr<user_struct>>>();
+            mapAreasToUsersRemote.insert({neighborArea->getOtherProcessorRank(), users_t});
         }
         bool isAlreadyPresent = false;
         for(auto it = users_t->begin(); it != users_t->end() && !isAlreadyPresent; ++it){
@@ -341,23 +341,23 @@ void Area::addUserOutOfArea(Direction direction, shared_ptr<User> user, float bo
         if(neighborArea->isLocal(my_processor_rank)){
             //The user changes area but it remains in the same processor,
             //so we populate the map mapOutOfAreasToUsersLocal.
-            vector<shared_ptr<User>> * users;
+            shared_ptr<vector<shared_ptr<User>>> users;
             if(mapOutOfAreasToUsersLocal.count(neighborArea->getID())){
-                users = &(mapOutOfAreasToUsersLocal.at(neighborArea->getID()));
+                users = mapOutOfAreasToUsersLocal.at(neighborArea->getID());
             }else{
-                users = new vector<shared_ptr<User>>;
-                mapOutOfAreasToUsersLocal.insert( {neighborArea->getID(), *users});
+                users = make_shared<vector<shared_ptr<User>>>();
+                mapOutOfAreasToUsersLocal.insert( {neighborArea->getID(), users});
             }
             users->push_back(user);
         }else{
             //The user changes area and goes to a different processor,
             //so we populate the map mapOutOfAreasToUsersRemote.
-            vector<shared_ptr<user_struct>> * users_t;
-            if(mapOutOfAreasToUsersRemote.count(neighborArea->getID())){
-                users_t = &(mapOutOfAreasToUsersRemote.at(neighborArea->getOtherProcessorRank()));
+            shared_ptr<vector<shared_ptr<user_struct>>> users_t;
+            if(mapOutOfAreasToUsersRemote.count(neighborArea->getOtherProcessorRank())){
+                users_t = mapOutOfAreasToUsersRemote.at(neighborArea->getOtherProcessorRank());
             }else{
-                users_t = new vector<shared_ptr<user_struct>>;
-                mapOutOfAreasToUsersRemote.insert( {neighborArea->getOtherProcessorRank(), *users_t});
+                users_t = make_shared<vector<shared_ptr<user_struct>>>();
+                mapOutOfAreasToUsersRemote.insert( {neighborArea->getOtherProcessorRank(), users_t});
             }
             users_t->push_back(user->getStruct());
         }
@@ -389,8 +389,8 @@ void Area::addUserOutOfArea(Direction direction, shared_ptr<User> user, float bo
             tie(newDirX,newDirY) = getRadomDirection();
             nextX = x + deltaTime * vel * newDirX;
             nextY = y + deltaTime * vel * newDirY;
-        } while (checkIfCoordinatesAreOKWithDirection(direction,nextX,nextY));
-        user->pos->updateDirections(newDirX,newDirY);     
+        } while (!checkIfCoordinatesAreOKWithDirection(direction,nextX,nextY));
+        user->updateUserDirection(newDirX,newDirY);     
 
         //NOTE: is not necessary to add the user to the list of neighbor users since they will be computed
         //after the exchange of all the user out of areas.

@@ -1,77 +1,11 @@
 The state of the infection spreading at day 0 of the computation is:
-Area ID: 18
-   Actual population: 0
-   Actually infected: 0
-   Actually immune: 0
-Area ID: 19
-   Actual population: 0
-   Actually infected: 0
-   Actually immune: 0
-Area ID: 20
-   Actual population: 0
-   Actually infected: 0
-   Actually immune: 0
-Area ID: 21
-   Actual population: 0
-   Actually infected: 0
-   Actually immune: 0
-Area ID: 22
-   Actual population: 0
-   Actually infected: 0
-   Actually immune: 0
-Area ID: 23
-   Actual population: 0
+Area ID: 3
+   Actual population: 12
    Actually infected: 0
    Actually immune: 0
 
 The state of the infection spreading at day 1 of the computation is:
-Area ID: 18
-   Actual population: 0
-   Actually infected: 0
-   Actually immune: 0
-Area ID: 19
-   Actual population: 0
-   Actually infected: 0
-   Actually immune: 0
-Area ID: 20
-   Actual population: 0
-   Actually infected: 0
-   Actually immune: 0
-Area ID: 21
-   Actual population: 0
-   Actually infected: 0
-   Actually immune: 0
-Area ID: 22
-   Actual population: 0
-   Actually infected: 0
-   Actually immune: 0
-Area ID: 23
-   Actual population: 0
-   Actually infected: 0
-   Actually immune: 0
-
-The state of the infection spreading at day 2 of the computation is:
-Area ID: 18
-   Actual population: 0
-   Actually infected: 0
-   Actually immune: 0
-Area ID: 19
-   Actual population: 0
-   Actually infected: 0
-   Actually immune: 0
-Area ID: 20
-   Actual population: 0
-   Actually infected: 0
-   Actually immune: 0
-Area ID: 21
-   Actual population: 0
-   Actually infected: 0
-   Actually immune: 0
-Area ID: 22
-   Actual population: 0
-   Actually infected: 0
-   Actually immune: 0
-Area ID: 23
+Area ID: 3
    Actual population: 0
    Actually infected: 0
    Actually immune: 0

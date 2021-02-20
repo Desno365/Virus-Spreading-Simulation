@@ -41,17 +41,17 @@ class Area
         void setNeighborArea(shared_ptr<NeighborArea> neighborArea,Direction direction);
         //Returns a Map that associated the local Area to which the vector of user has to be 
         //added.
-        map<int,vector<shared_ptr<User>>> getOutOfAreaUsersLocal();
+        map<int,shared_ptr<vector<shared_ptr<User>>>> getOutOfAreaUsersLocal();
         //Returns a Map that associated the remote processor to which the vector of user_struct has to be 
         //added. The user object will be destroyed in this method.
-        map<int,vector<shared_ptr<user_struct>>> getOutOfAreaUsersRemote();
+        map<int,shared_ptr<vector<shared_ptr<user_struct>>>> getOutOfAreaUsersRemote();
         //Compute the content of the maps that contains the user or the user_struct of the users that have leave the area, returned 
         //by the two previous methods.
         void computeOutOfAreaUserMap();
         //Returns a Map that associated the local Area interested in knowing the users near the border that are infected(user pointer are shared).
-        map<int,vector<shared_ptr<User>>> getNearBorderUsersLocal();
+        map<int,shared_ptr<vector<shared_ptr<User>>>> getNearBorderUsersLocal();
         //Returns a Map that associated the remote processor interested in knowing the users near the border that are infected.
-        map<int,vector<shared_ptr<user_struct>>> getNearBorderUsersRemote();
+        map<int,shared_ptr<vector<shared_ptr<user_struct>>>> getNearBorderUsersRemote();
         //Computes the two maps that contains the users near the border. Use the previous getter to get them.
         //NOTE: it assumes that it is called after updateUserPosition() so the map of the user near the border is up to date.
         void computeNearBorderUserMap();
@@ -122,19 +122,19 @@ class Area
 
         //It is recomputed each time computeNearBorderUserMap(), and contains the association of the id of the area
         //to which the infected user has to be sent locally.
-        map<int,vector<shared_ptr<User>>>  mapAreasToUsersLocal;
+        map<int,shared_ptr<vector<shared_ptr<User>>>>  mapAreasToUsersLocal;
         //It is recomputed each time computeNearBorderUserMap(), and contains the association of the id of the process
         //to which the infected user has to be sent remotely.
-        map<int,vector<shared_ptr<user_struct>>>  mapAreasToUsersRemote;
+        map<int,shared_ptr<vector<shared_ptr<user_struct>>>>  mapAreasToUsersRemote;
         //Add a user to one of the previous maps, based on the neighbor area, it will only work on infected user.
         void addUserNear(shared_ptr<User> user, shared_ptr<NeighborArea> neighborArea);
 
         //It is recomputed each time computeNearBorderUserMap(), and contains the association of the id of the area
         //to which the infected user has to be sent locally.
-        map<int,vector<shared_ptr<User>>>  mapOutOfAreasToUsersLocal;
+        map<int,shared_ptr<vector<shared_ptr<User>>>>  mapOutOfAreasToUsersLocal;
         //It is recomputed each time computeNearBorderUserMap(), and contains the association of the id of the process
         //to which the infected user has to be sent remotely.
-        map<int,vector<shared_ptr<user_struct>>>  mapOutOfAreasToUsersRemote;
+        map<int,shared_ptr<vector<shared_ptr<user_struct>>>>  mapOutOfAreasToUsersRemote;
         //Add the user to one of the previous map( if the user has not reached a border) based on the neighbor area
         //that is present inside the neighboar areas map at the correspondent direction.
         void addUserOutOfArea(Direction direction, shared_ptr<User> user, float borderCoordinates);
