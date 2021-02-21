@@ -1,5 +1,4 @@
 #include "utility.h"
-
 using namespace std;
 
 char * fromStringToCharName(string string){

@@ -12,13 +12,12 @@
 #include "user/user.h"
 #include "area/area.h"
 #include "utility/utility.h"
+#include "utility/mainUtility.h"
+
 
 using namespace std;
 //Is the number of parameters that can be passed when the program execute
 #define NUMBER_OF_PARAMETERS 10
-//Is the size of the matrix that is considered as a neighborhoods an Area.
-//NOTE: it has to be ODD.
-#define NEIGHBOR_DISTANCE 3
 //Is the number of seconds in a day. Is used in order to print the status only after a day.
 #define SECONDS_IN_DAY 86400
 
@@ -38,18 +37,6 @@ bool cmdOptionExists(char** begin, char** end, const string& option)
 {
     return find(begin, end, option) != end;
 }
-
-//Returns the total number of areas. It returns 0 if they are not multiple.
-int getNumberOfAreas(int W,int L, int w,int l);
-
-//Returns the length of row in which the map is divide when generating the areas.
-int getStride(int W,int w);
-
-//Returns the length of column in which the map is divide when generating the areas.
-int getStrideVertical(int L,int l);
-
-//Returns the vector of Area associated to the provided processor_rank.
-vector<shared_ptr<Area>> getArea(int numberOfAreas, int processor_rank, int world_size,int stride, float infectionDistance, int deltaTime);
 
 //Populate the map with the vector for the areas.
 template<typename T>
@@ -529,69 +516,6 @@ int main(int argc, char** argv) {
 
     MPI_Finalize();
     return 0;
-}
-
-
-int getNumberOfAreas(int W,int L, int w,int l){
-    if(W%w==0 && L%l==0){
-        return W/w * L/l;
-    }else
-        return 0;
-}
-
-int getStride(int W,int w){
-    return W/w;
-}
-
-int getStrideVertical(int L,int l){
-    return L/l;
-}
-
-//NOTE: the ids of the areas are assigned from left to right, top to bottom in increasing order.
-vector<shared_ptr<Area>> getArea(int numberOfAreas, int processor_rank, int world_size,int stride, float infectionDistance, int deltaTime){
-    vector<shared_ptr<Area>> areas;
-    int minAreasForProcessor = numberOfAreas / world_size;
-    int maxAreasForProcessor = numberOfAreas % world_size == 0 ? minAreasForProcessor : minAreasForProcessor + 1;
-    int leftOutAreas = numberOfAreas % world_size;
-    int startingAreaID,endingAreaID;
-    if(processor_rank<leftOutAreas){
-        startingAreaID = maxAreasForProcessor*(processor_rank);
-        endingAreaID = startingAreaID+maxAreasForProcessor;
-    }else{
-        startingAreaID = maxAreasForProcessor*leftOutAreas + minAreasForProcessor*(processor_rank-leftOutAreas);
-        endingAreaID = startingAreaID+minAreasForProcessor;
-    }
-    for(int i=startingAreaID; i<endingAreaID;i++){
-        shared_ptr<Area> newArea = make_shared<Area>(i%stride,i/stride,i,infectionDistance, deltaTime, processor_rank);
-        areas.push_back(newArea);
-    }
-    for(shared_ptr<Area> area:areas){
-        tuple<int,int> areaCor = area->getCoordinate();
-        int neighborStartCol = get<0>(areaCor)-(int)(NEIGHBOR_DISTANCE/2);
-        int neighborStartRow = get<1>(areaCor)-(int)(NEIGHBOR_DISTANCE/2);
-        //Starts from the top and go down to the right
-        for(int i=0;i<NEIGHBOR_DISTANCE;i++){//i is the Row
-            for (int j = 0; j < NEIGHBOR_DISTANCE; j++)//j is the Col
-            {
-                int neighborAreaCol = neighborStartCol+j;
-                int neighborAreaRow = neighborStartRow+i;
-                if(neighborAreaCol>=0 && neighborAreaRow>=0 && neighborAreaCol<stride && neighborAreaRow<numberOfAreas/stride && (neighborAreaCol!=get<0>(areaCor) || neighborAreaRow!=get<1>(areaCor))){
-                    int neighborID = neighborAreaCol+neighborAreaRow*stride;
-                    int processorArea;
-                    if(neighborID<maxAreasForProcessor*(leftOutAreas)){
-                        processorArea = neighborID/maxAreasForProcessor;
-                    }else{
-                        int temp = neighborID-leftOutAreas*maxAreasForProcessor;
-                        processorArea = leftOutAreas + temp/minAreasForProcessor;
-                    }
-                    //TODO check the value of the neighborID.
-                    shared_ptr<NeighborArea> neighborArea = make_shared<NeighborArea>(processorArea,neighborID);
-                    area->setNeighborArea(neighborArea,(Direction)(i*NEIGHBOR_DISTANCE+j));
-                }
-            }            
-        }
-    }
-    return areas;
 }
 
 template<typename T>
