@@ -12,6 +12,62 @@ using namespace std;
 
 TEST_CASE("Area") {
 
+    //Set a random seed for all the next computation.
+    srand (time(NULL));
+
+    SECTION("getNewUserFromRemoteLocation") {
+        // Initialize empty area.
+        shared_ptr<Area> area = getEmptyArea();
+
+        // Make tests on the created area.
+        map<int,shared_ptr<User>> userNearInternalBorders1 = area->getUserNearInternalBorders();
+        vector<shared_ptr<User>> outOfAreaUsers1 = area->getOutOfAreaUsers();
+        REQUIRE( userNearInternalBorders1.size() == 0 );
+        REQUIRE( outOfAreaUsers1.size() == 0 );
+
+        // Create newUsers vector.
+        vector<shared_ptr<User>> newUsers;
+
+        // User not inside.
+        shared_ptr<Position> userPos1 = make_shared<Position>(6,6,0.1,0.174,0.985);
+        shared_ptr<User> newUser1 = make_shared<User>(1, userPos1, false);
+        newUsers.push_back(newUser1);
+
+        // User inside.
+        shared_ptr<Position> userPos2 = make_shared<Position>(1,1,0.1,0.174,0.985);
+        shared_ptr<User> newUser2 = make_shared<User>(2, userPos2, false);
+        newUsers.push_back(newUser2);
+
+        // User not inside.
+        shared_ptr<Position> userPos3 = make_shared<Position>(6,6,0.1,0.174,0.985);
+        shared_ptr<User> newUser3 = make_shared<User>(3, userPos3, false);
+        newUsers.push_back(newUser3);
+
+        // User inside.
+        shared_ptr<Position> userPos4 = make_shared<Position>(1,1,0.1,0.174,0.985);
+        shared_ptr<User> newUser4 = make_shared<User>(4, userPos4, false);
+        newUsers.push_back(newUser4);
+
+        // User not inside.
+        shared_ptr<Position> userPos5 = make_shared<Position>(6,6,0.1,0.174,0.985);
+        shared_ptr<User> newUser5 = make_shared<User>(1, userPos5, false);
+        newUsers.push_back(newUser5);
+
+        // Make tests on the created vector.
+        REQUIRE( newUsers.size() == 5 );
+
+        area->getNewUserFromRemoteLocation(&newUsers);
+
+        // Make tests on the area.
+        map<int,shared_ptr<User>> userNearInternalBorders2 = area->getUserNearInternalBorders();
+        vector<shared_ptr<User>> outOfAreaUsers2 = area->getOutOfAreaUsers();
+        REQUIRE( userNearInternalBorders2.size() == 2 );
+        REQUIRE( outOfAreaUsers2.size() == 0 );
+
+        // Make tests on the vector.
+        REQUIRE( newUsers.size() == 3 );
+    }
+
     SECTION("sortUser") {
         // Initialize test area with users with 0 velocity.
         shared_ptr<Area> area = getTestAreaWithoutNearbyUsersRemote(0.0);
@@ -20,7 +76,7 @@ TEST_CASE("Area") {
         map<int,shared_ptr<User>> userNearInternalBorders1 = area->getUserNearInternalBorders();
         vector<shared_ptr<User>> outOfAreaUsers1 = area->getOutOfAreaUsers();
         REQUIRE( userNearInternalBorders1.size() == 2 );
-        REQUIRE( outOfAreaUsers1.size() == 1 );
+        REQUIRE( outOfAreaUsers1.size() == 8 );
     }
 
     SECTION("updateUserInfectionStatus without nearby users remote") {
@@ -34,7 +90,7 @@ TEST_CASE("Area") {
         vector<shared_ptr<User>> outOfAreaUsers1 = area->getOutOfAreaUsers();
         tie(infectedUser,immuneUser) = area->actuallyInfectedAndImmuneUser();
         REQUIRE( userNearInternalBorders1.size() == 2 );
-        REQUIRE( outOfAreaUsers1.size() == 1 );
+        REQUIRE( outOfAreaUsers1.size() == 8 );
         REQUIRE( infectedUser == 1 );
         REQUIRE( immuneUser == 0 );
 
@@ -44,7 +100,7 @@ TEST_CASE("Area") {
         vector<shared_ptr<User>> outOfAreaUsers2 = area->getOutOfAreaUsers();
         tie(infectedUser,immuneUser) = area->actuallyInfectedAndImmuneUser();
         REQUIRE( userNearInternalBorders1.size() == 2 );
-        REQUIRE( outOfAreaUsers1.size() == 1 );
+        REQUIRE( outOfAreaUsers1.size() == 8 );
         REQUIRE( infectedUser == 1 );
         REQUIRE( immuneUser == 0 );
 
@@ -54,7 +110,7 @@ TEST_CASE("Area") {
         vector<shared_ptr<User>> outOfAreaUsers3 = area->getOutOfAreaUsers();
         tie(infectedUser,immuneUser) = area->actuallyInfectedAndImmuneUser();
         REQUIRE( userNearInternalBorders1.size() == 2 );
-        REQUIRE( outOfAreaUsers1.size() == 1 );
+        REQUIRE( outOfAreaUsers1.size() == 8 );
         REQUIRE( infectedUser == 3 );
         REQUIRE( immuneUser == 0 );
     }
@@ -103,14 +159,89 @@ TEST_CASE("Area") {
         map<int,shared_ptr<User>> userNearInternalBorders1 = area->getUserNearInternalBorders();
         vector<shared_ptr<User>> outOfAreaUsers1 = area->getOutOfAreaUsers();
         REQUIRE( userNearInternalBorders1.size() == 2 );
-        REQUIRE( outOfAreaUsers1.size() == 1 );
+        REQUIRE( outOfAreaUsers1.size() == 8 );
 
         area->updateUserPositions();
 
         map<int,shared_ptr<User>> userNearInternalBorders2 = area->getUserNearInternalBorders();
         vector<shared_ptr<User>> outOfAreaUsers2 = area->getOutOfAreaUsers();
         REQUIRE( userNearInternalBorders2.size() == 0 );
-        REQUIRE( outOfAreaUsers2.size() == 5 );
+        REQUIRE( outOfAreaUsers2.size() == 12 );
+    }
+
+    SECTION("computeOutOfAreaUserMap, without extra region users") {
+        // Initialize test area with users with near 0 velocity (note: velocity can't be zero otherwise exiting from the area is impossible and causes an infinite loop).
+        shared_ptr<Area> area = getTestAreaWithoutNearbyUsersRemote(0.1);
+
+        // Make tests on the created area.
+        vector<shared_ptr<User>> outOfAreaUsers1 = area->getOutOfAreaUsers();
+        map<int,shared_ptr<vector<shared_ptr<User>>>> outOfAreaUsersLocal1 = area->getOutOfAreaUsersLocal();
+        map<int,shared_ptr<vector<shared_ptr<user_struct>>>> outOfAreaUsersRemote1 = area->getOutOfAreaUsersRemote();
+        REQUIRE( outOfAreaUsers1.size() == 8 );
+        REQUIRE( outOfAreaUsersLocal1.size() == 0 );
+        REQUIRE( outOfAreaUsersRemote1.size() == 0 );
+
+        area->computeOutOfAreaUserMap();
+
+        vector<shared_ptr<User>> outOfAreaUsers2 = area->getOutOfAreaUsers();
+        map<int,shared_ptr<vector<shared_ptr<User>>>> outOfAreaUsersLocal2 = area->getOutOfAreaUsersLocal();
+        map<int,shared_ptr<vector<shared_ptr<user_struct>>>> outOfAreaUsersRemote2 = area->getOutOfAreaUsersRemote();
+        REQUIRE( outOfAreaUsers2.size() == 8 );
+        REQUIRE( outOfAreaUsersLocal2.size() == 2 );
+        REQUIRE( outOfAreaUsersRemote2.size() == 2 );
+        REQUIRE( outOfAreaUsersRemote2.at(MY_PROCESSOR_RANK-1)->size() == 3 );
+        REQUIRE( outOfAreaUsersRemote2.at(MY_PROCESSOR_RANK+1)->size() == 3 );
+    }
+
+    SECTION("computeOutOfAreaUserMap, with extra region users") {
+        // Initialize test area with users with near 0 velocity (note: velocity can't be zero otherwise exiting from the area is impossible and causes an infinite loop).
+        shared_ptr<Area> area = getTestAreaWithoutNearbyUsersRemoteAndWithExtraRegionUsers(0.1);
+
+        // Make tests on the created area.
+        vector<shared_ptr<User>> outOfAreaUsers1 = area->getOutOfAreaUsers();
+        map<int,shared_ptr<vector<shared_ptr<User>>>> outOfAreaUsersLocal1 = area->getOutOfAreaUsersLocal();
+        map<int,shared_ptr<vector<shared_ptr<user_struct>>>> outOfAreaUsersRemote1 = area->getOutOfAreaUsersRemote();
+        REQUIRE( outOfAreaUsers1.size() == 8 );
+        REQUIRE( outOfAreaUsersLocal1.size() == 0 );
+        REQUIRE( outOfAreaUsersRemote1.size() == 0 );
+
+        area->computeOutOfAreaUserMap();
+
+        vector<shared_ptr<User>> outOfAreaUsers2 = area->getOutOfAreaUsers();
+        map<int,shared_ptr<vector<shared_ptr<User>>>> outOfAreaUsersLocal2 = area->getOutOfAreaUsersLocal();
+        map<int,shared_ptr<vector<shared_ptr<user_struct>>>> outOfAreaUsersRemote2 = area->getOutOfAreaUsersRemote();
+        REQUIRE( outOfAreaUsers2.size() == 8 );
+        REQUIRE( outOfAreaUsersLocal2.size() == 1 );
+        REQUIRE( outOfAreaUsersRemote2.size() == 1 );
+        REQUIRE( outOfAreaUsersRemote2.at(MY_PROCESSOR_RANK+1)->size() == 2 );
+    }
+
+    SECTION("computeNearBorderUserMap, without extra region users") {
+        // Initialize test area with users with near 0 velocity (note: velocity can't be zero otherwise exiting from the area is impossible and causes an infinite loop).
+        shared_ptr<Area> area = getTestAreaWithNearBorderUsers(0.1);
+
+        // Make tests on the created area.
+        map<int,shared_ptr<User>> userNearInternalBorders1 = area->getUserNearInternalBorders();
+        vector<shared_ptr<User>> outOfAreaUsers1 = area->getOutOfAreaUsers();
+        map<int,shared_ptr<vector<shared_ptr<User>>>> nearBorderUsersLocal1 = area->getNearBorderUsersLocal();
+        map<int,shared_ptr<vector<shared_ptr<user_struct>>>> nearBorderUsersRemote1 = area->getNearBorderUsersRemote();
+        REQUIRE( userNearInternalBorders1.size() == 4 );
+        REQUIRE( outOfAreaUsers1.size() == 0 );
+        REQUIRE( nearBorderUsersLocal1.size() == 0 );
+        REQUIRE( nearBorderUsersRemote1.size() == 0 );
+
+        area->computeNearBorderUserMap();
+
+        map<int,shared_ptr<User>> userNearInternalBorders2 = area->getUserNearInternalBorders();
+        vector<shared_ptr<User>> outOfAreaUsers2 = area->getOutOfAreaUsers();
+        map<int,shared_ptr<vector<shared_ptr<User>>>> nearBorderUsersLocal2 = area->getNearBorderUsersLocal();
+        map<int,shared_ptr<vector<shared_ptr<user_struct>>>> nearBorderUsersRemote2 = area->getNearBorderUsersRemote();
+        REQUIRE( userNearInternalBorders2.size() == 4 );
+        REQUIRE( outOfAreaUsers2.size() == 0 );
+        REQUIRE( nearBorderUsersLocal2.size() == 2 );
+        REQUIRE( nearBorderUsersRemote2.size() == 2 );
+        REQUIRE( nearBorderUsersRemote2.at(MY_PROCESSOR_RANK-1)->size() == 1 );
+        REQUIRE( nearBorderUsersRemote2.at(MY_PROCESSOR_RANK+1)->size() == 1 );
     }
 
 }
