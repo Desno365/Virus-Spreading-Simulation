@@ -22,7 +22,7 @@ void Area::addUsers(vector<shared_ptr<User>> users){
 }
 
 void Area::getNewUserFromRemoteLocation(vector<shared_ptr<User>> *newUsers){
-    vector<int> selectedUser;
+    vector<int> selectedUsers;
     for(int i=0; i<(int)newUsers->size() ; i++){
         shared_ptr<User> user = newUsers->at(i);
         float x  = user->pos->getX();
@@ -30,12 +30,16 @@ void Area::getNewUserFromRemoteLocation(vector<shared_ptr<User>> *newUsers){
         //Check if the user is inside this area, if is the case take it.
         if(x>=lowerX && x<=higherX && y>=lowerY && y<=higherY){
             addUser(user);
-            selectedUser.push_back(i);
+            selectedUsers.push_back(user->getId());
         }
     }
     //Remove the selected user from the input vector.
-    for(int i : selectedUser){
-        newUsers->erase(newUsers->begin()+i);
+    for(int i : selectedUsers){
+        for(auto newUser = newUsers->begin(); newUser != newUsers->end(); ++newUser)
+            if(newUser->get()->getId() == i){
+                newUsers->erase(newUsers->begin()+i);
+                break;
+            }
     }
 }
 
