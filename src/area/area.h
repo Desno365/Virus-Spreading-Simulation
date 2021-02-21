@@ -88,6 +88,7 @@ class Area
         // METHODS FOR TESTS:
         map<int,shared_ptr<User>> getUserNearInternalBorders();
         vector<shared_ptr<User>> getOutOfAreaUsers();
+        map<Direction,shared_ptr<NeighborArea>> getNeighborAreas();
     private:
         //Is the id of the area.
         int id;

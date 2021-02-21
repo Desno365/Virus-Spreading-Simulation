@@ -433,3 +433,6 @@ map<int,shared_ptr<User>> Area::getUserNearInternalBorders(){
 vector<shared_ptr<User>> Area::getOutOfAreaUsers() {
     return outOfAreaUsers;
 }
+map<Direction,shared_ptr<NeighborArea>> Area::getNeighborAreas() {
+    return neighborAreas;
+}
