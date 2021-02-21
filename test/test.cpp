@@ -2,6 +2,8 @@
 #include <catch2/catch.hpp>
 #include "./../src/user/user.h"
 #include "./../src/area/area.h"
+#include "utility/mainUtility.h"
+#include "utility/utility.h"
 #include "./testUtility.cpp"
 
 using namespace std;
@@ -9,11 +11,86 @@ using namespace std;
 // 1) Install Catch2 (it can be installed for example through homebrew with the command "brew install catch2");
 // 2) Run the following command: make test -B
 
+TEST_CASE("Main Utility") {
+    SECTION("getArea") {
+        int W = 10;
+        int L = 10;
+        int w = 5;
+        int l = 5;
+        int number_of_areas = getNumberOfAreas(W,L,w,l); // W must be multiple of w. L must be multiple of l.
+
+        // Test areas of processor 0.
+        vector<shared_ptr<Area>> processorAreas0 = getArea(number_of_areas, 0, 4, getStride(W,w), DEFAULT_INFECTION_DISTANCE, DEFAULT_DELTA_TIME);
+        REQUIRE( processorAreas0.size() == 1 );
+
+        shared_ptr<Area> area0 = processorAreas0[0];
+        setCorrectBoundariesForArea(area0, w, l, L);
+        float x0, y0;
+        tie(x0,y0) = area0->getRadomCoordinates();
+        map<Direction,shared_ptr<NeighborArea>> neighborAreas0 = area0->getNeighborAreas();
+        REQUIRE( area0->getRow() == 0 );
+        REQUIRE( area0->getCol() == 0 );
+        REQUIRE( (x0 >= 0.0 && x0 <= 5.0 && y0 >= 5.0 && y0 <= 10.0) == true );
+        REQUIRE( neighborAreas0.size() == 3 );
+        REQUIRE( neighborAreas0.at(East)->getOtherProcessorRank() == 1 );
+        REQUIRE( neighborAreas0.at(South)->getOtherProcessorRank() == 2 );
+        REQUIRE( neighborAreas0.at(SouthEast)->getOtherProcessorRank() == 3 );
+
+        // Test areas of processor 1.
+        vector<shared_ptr<Area>> processorAreas1 = getArea(number_of_areas, 1, 4, getStride(W,w), DEFAULT_INFECTION_DISTANCE, DEFAULT_DELTA_TIME);
+        REQUIRE( processorAreas1.size() == 1 );
+
+        shared_ptr<Area> area1 = processorAreas1[0];
+        setCorrectBoundariesForArea(area1, w, l, L);
+        float x1, y1;
+        tie(x1,y1) = area1->getRadomCoordinates();
+        map<Direction,shared_ptr<NeighborArea>> neighborAreas1 = area1->getNeighborAreas();
+        REQUIRE( area1->getRow() == 0 );
+        REQUIRE( area1->getCol() == 1 );
+        REQUIRE( (x1 >= 5.0 && x1 <= 10.0 && y1 >= 5.0 && y1 <= 10.0) == true );
+        REQUIRE( neighborAreas1.size() == 3 );
+        REQUIRE( neighborAreas1.at(West)->getOtherProcessorRank() == 0 );
+        REQUIRE( neighborAreas1.at(South)->getOtherProcessorRank() == 3 );
+        REQUIRE( neighborAreas1.at(SouthWest)->getOtherProcessorRank() == 2 );
+
+        // Test areas of processor 2.
+        vector<shared_ptr<Area>> processorAreas2 = getArea(number_of_areas, 2, 4, getStride(W,w), DEFAULT_INFECTION_DISTANCE, DEFAULT_DELTA_TIME);
+        REQUIRE( processorAreas2.size() == 1 );
+
+        shared_ptr<Area> area2 = processorAreas2[0];
+        setCorrectBoundariesForArea(area2, w, l, L);
+        float x2, y2;
+        tie(x2,y2) = area2->getRadomCoordinates();
+        map<Direction,shared_ptr<NeighborArea>> neighborAreas2 = area2->getNeighborAreas();
+        REQUIRE( area2->getRow() == 1 );
+        REQUIRE( area2->getCol() == 0 );
+        REQUIRE( (x2 >= 0.0 && x2 <= 5.0 && y2 >= 0.0 && y2 <= 5.0) == true );
+        REQUIRE( neighborAreas2.size() == 3 );
+        REQUIRE( neighborAreas2.at(East)->getOtherProcessorRank() == 3 );
+        REQUIRE( neighborAreas2.at(North)->getOtherProcessorRank() == 0 );
+        REQUIRE( neighborAreas2.at(NorthEast)->getOtherProcessorRank() == 1 );
+
+        // Test areas of processor 3.
+        vector<shared_ptr<Area>> processorAreas3 = getArea(number_of_areas, 3, 4, getStride(W,w), DEFAULT_INFECTION_DISTANCE, DEFAULT_DELTA_TIME);
+        REQUIRE( processorAreas3.size() == 1 );
+
+        shared_ptr<Area> area3 = processorAreas3[0];
+        setCorrectBoundariesForArea(area3, w, l, L);
+        float x3, y3;
+        tie(x3,y3) = area3->getRadomCoordinates();
+        map<Direction,shared_ptr<NeighborArea>> neighborAreas3 = area3->getNeighborAreas();
+        REQUIRE( area3->getRow() == 1 );
+        REQUIRE( area3->getCol() == 1 );
+        REQUIRE( (x3 >= 5.0 && x3 <= 10.0 && y3 >= 0.0 && y3 <= 5.0) == true );
+        REQUIRE( neighborAreas3.size() == 3 );
+        REQUIRE( neighborAreas3.at(West)->getOtherProcessorRank() == 2 );
+        REQUIRE( neighborAreas3.at(North)->getOtherProcessorRank() == 1 );
+        REQUIRE( neighborAreas3.at(NorthWest)->getOtherProcessorRank() == 0 );
+    }
+}
+
 
 TEST_CASE("Area") {
-
-    //Set a random seed for all the next computation.
-    srand (time(NULL));
 
     SECTION("getNewUserFromRemoteLocation") {
         // Initialize empty area.
