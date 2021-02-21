@@ -37,7 +37,7 @@ void Area::getNewUserFromRemoteLocation(vector<shared_ptr<User>> *newUsers){
     for(int i : selectedUsers){
         for(auto newUser = newUsers->begin(); newUser != newUsers->end(); ++newUser)
             if(newUser->get()->getId() == i){
-                newUsers->erase(newUsers->begin()+i);
+                newUsers->erase(newUser);
                 break;
             }
     }
