@@ -219,11 +219,7 @@ int main(int argc, char** argv) {
     int infected_left_out = I % number_of_areas;
     if(my_rank<infected_left_out) infected_users_area++;
     for(shared_ptr<Area> area:processor_areas){
-        int lowerX = w * area->getCol();
-        int lowerY = l * (getStrideVertical(L,l)-1-area->getRow());
-        int higherX = lowerX + w;
-        int higherY = lowerY + l;
-        area->setBoundaries(lowerX,lowerY,higherX,higherY);
+        setCorrectBoundariesForArea(area, w, l, L);
         
         for(int i=0;i<user_per_area;i++){
             //Generate random coordinates inside this region.

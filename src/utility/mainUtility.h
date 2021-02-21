@@ -26,4 +26,7 @@ int getStrideVertical(int L,int l);
 //Returns the vector of Area associated to the provided processor_rank.
 vector<shared_ptr<Area>> getArea(int numberOfAreas, int processor_rank, int world_size,int stride, float infectionDistance, int deltaTime);
 
+//Sets correctly the boundaries of the area given the values used to create it.
+void setCorrectBoundariesForArea(shared_ptr<Area> area, int w, int l, int L);
+
 #endif

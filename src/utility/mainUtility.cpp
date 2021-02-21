@@ -68,4 +68,12 @@ vector<shared_ptr<Area>> getArea(int numberOfAreas, int processor_rank, int worl
     return areas;
 }
 
+void setCorrectBoundariesForArea(shared_ptr<Area> area, int w, int l, int L) {
+    int lowerX = w * area->getCol();
+    int lowerY = l * (getStrideVertical(L,l)-1-area->getRow());
+    int higherX = lowerX + w;
+    int higherY = lowerY + l;
+    area->setBoundaries(lowerX,lowerY,higherX,higherY);
+}
+
 
