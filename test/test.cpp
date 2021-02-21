@@ -50,7 +50,7 @@ TEST_CASE("Area") {
 
         // User not inside.
         shared_ptr<Position> userPos5 = make_shared<Position>(6,6,0.1,0.174,0.985);
-        shared_ptr<User> newUser5 = make_shared<User>(1, userPos5, false);
+        shared_ptr<User> newUser5 = make_shared<User>(5, userPos5, false);
         newUsers.push_back(newUser5);
 
         // Make tests on the created vector.
@@ -66,6 +66,9 @@ TEST_CASE("Area") {
 
         // Make tests on the vector.
         REQUIRE( newUsers.size() == 3 );
+        REQUIRE( newUsers[0]->getId() == 1 );
+        REQUIRE( newUsers[1]->getId() == 3 );
+        REQUIRE( newUsers[2]->getId() == 5 );
     }
 
     SECTION("sortUser") {
