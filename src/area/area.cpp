@@ -326,6 +326,7 @@ void Area::computeOutOfAreaUserMap(){
             areaOutDirection = East;
         }else{
             cout << "Error in Area " << id << " managed by processor " << my_processor_rank << " with user with (X,Y): (" << user_ptr->pos->getX() << "," << user_ptr->pos->getY() << ")\n";
+            throw -1;
         }
         addUserOutOfArea(areaOutDirection,user_ptr,borderCoordinates);
     }
