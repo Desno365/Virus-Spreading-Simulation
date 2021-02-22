@@ -1,6 +1,7 @@
 #include <stdlib.h> 
 #include <sstream>
 #include <stdio.h>
+#include <math.h>
 
 #include "area.h"
 
@@ -206,6 +207,64 @@ tuple<int,int> Area::actuallyInfectedAndImmuneUser(){
     return {infectedUser,immuneUser};
 }
 
+void Area::printArea(FILE *ptr, int timestamp){
+    int width = higherX - lowerX;
+    int height = higherY - lowerY;
+    int numberOfUsers = usersInArea.size();
+    int printedNumberOfUsers = 0;
+
+    ostringstream stream;
+    stream << "\n";
+    stream << "Area ID: " << id << "; Timestamp: " << timestamp << "; X in : [" << lowerX << "," << higherX << "]; Y in: [" << lowerY << "," << higherY << "];\n";
+    for( int i = 0; i < height + 2; ++i ) {
+        for( int j = 0; j < ((width+1) * 3) + 1; ++j ) {
+            if(i == 0 || i == height + 1) {
+                if(j == 0 || j % 3 == 0) {
+                    stream << "|";
+                } else {
+                    stream << "-";
+                }
+            } else {
+                if(j == 0 || j == ((width+1) * 3)) {
+                    stream << "|";
+                }else if(j % 3 == 0) {
+                    int howMany = howManyUsersAtIntCoordinates(lowerX + (j/3), higherY - i + 1);
+                    printedNumberOfUsers = printedNumberOfUsers + howMany;
+                    if(howMany == 0)
+                        stream << " ";
+                    else
+                        stream << howMany;
+                } else {
+                    stream << " ";
+                }
+            }
+        }
+        stream << "\n";
+    }
+    int infectedUser,immuneUser;
+    tie(infectedUser,immuneUser) = actuallyInfectedAndImmuneUser();
+    stream << "Number of users: " << numberOfUsers << ".\n";
+    stream << "Number of infected users: " << infectedUser << ".\n";
+    stream << "Number of immune users: " << immuneUser << ".\n";
+    if(printedNumberOfUsers != numberOfUsers)
+        stream << "WARNING: There are " << (numberOfUsers - printedNumberOfUsers) << " users in this area that have not been printed (probably because they went outside the region).\n";
+    stream << "\n";
+    char * string = fromStringToCharName(stream.str());
+    fprintf(ptr, "%s", string);
+    free(string);
+}
+
+int Area::howManyUsersAtIntCoordinates(int x, int y) {
+    int howMany = 0;
+    for(auto it = this->usersInArea.begin(); it != this->usersInArea.end(); ++it){
+        shared_ptr<User> user = it->second;
+        int userIntX = (int) ceil(user->pos->getX());
+        int userIntY = (int) ceil(user->pos->getY());
+        if(userIntX == x && userIntY == y)
+            howMany++;
+    }
+    return howMany;
+}
 
 void Area::computeNearBorderUserMap(){
     //Check the various user based on the border to which they are near.

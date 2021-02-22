@@ -92,6 +92,22 @@ TEST_CASE("Main Utility") {
 
 TEST_CASE("Area") {
 
+    SECTION("printArea") {
+        // Initialize test area with users with near 0 velocity.
+        shared_ptr<Area> area = getTestAreaWithoutNearbyUsersRemote(0.1);
+
+        string fileName = "./outputs/print-area/test.txt";
+        char * str = fromStringToCharName(fileName);
+        FILE *fptr = fopen(str,"w");
+        if(fptr == NULL){
+            printf("Error in opening %s!",str);
+            exit(1);
+        }
+        free(str);
+
+        area->printArea(fptr, 0);
+    }
+
     SECTION("getNewUserFromRemoteLocation") {
         // Initialize empty area.
         shared_ptr<Area> area = getEmptyArea();

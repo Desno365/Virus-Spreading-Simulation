@@ -79,6 +79,8 @@ class Area
         tuple<float,float> getRadomDirection(); 
         //Prints on the standard output the actual state of the area.
         void printActualState(FILE *ptr);
+        //Prints on the standard output a representation of the area.
+        void printArea(FILE *ptr, int timestamp);
         //Returns a tuple in which the first elements is the number of users actually infected in this area, while
         //the second is the number of users actually immune.
         tuple<int,int> actuallyInfectedAndImmuneUser();
@@ -142,6 +144,9 @@ class Area
 
         //Returns true if the given coordinates are opposite to the given direction.
         bool checkIfCoordinatesAreOKWithDirection(Direction direction, float x, float y);
+
+        // Returns the number of users at the integer coordinates, so it rounds up (ceil) the position of the user to do this check.
+        int howManyUsersAtIntCoordinates(int x, int y);
     protected:
 };
 

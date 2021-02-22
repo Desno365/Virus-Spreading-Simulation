@@ -20,6 +20,8 @@ using namespace std;
 #define NUMBER_OF_PARAMETERS 10
 //Is the number of seconds in a day. Is used in order to print the status only after a day.
 #define SECONDS_IN_DAY 86400
+//Set this to true to print a map of the area at each step of the computation. Note: very expensive!
+#define DEBUG_PRINT_AREAS true
 
 //Retuns the value associated to the option between the two pointers
 char* getCmdOption(char ** begin, char ** end, const string & option)
@@ -257,6 +259,19 @@ int main(int argc, char** argv) {
     }
     free(str);
 
+    //For each processor gets its print-area file:
+    string fileNameAreas = "./outputs/print-area/processor-" + to_string(my_rank) +".txt";
+    char * strAreas = fromStringToCharName(fileNameAreas);
+    FILE *fptrAreas;
+    if(DEBUG_PRINT_AREAS) {
+        fptrAreas = fopen(strAreas,"w");
+        if(fptrAreas == NULL){
+            printf("Error in opening %s!",strAreas);
+            exit(1);
+        }
+        free(strAreas);
+    }
+
     //Setup data structure for the main loop:
     //Compute vector with the ids of the processor's areas.
     vector<int> area_ids;
@@ -468,6 +483,13 @@ int main(int argc, char** argv) {
             if(gather_buffer_sizes!=NULL) free(gather_buffer_sizes);
             if(gather_buffer_structs!=NULL) free(gather_buffer_structs);  
             if(displays!=NULL) free(displays);  
+        }
+
+        //Print areas.
+        if(DEBUG_PRINT_AREAS) {
+            for(shared_ptr<Area> area:processor_areas){
+                area->printArea(fptrAreas, elapsedTime);
+            }
         }
 
         //After this every area has a global vision of the map so it can update the infected status of the user.
