@@ -160,19 +160,19 @@ int main(int argc, char** argv) {
     //Add the position of the user.
     //Add x.
     block_lens[1] = 1;
-    types[1] = MPI::FLOAT;
+    types[1] = MPI_FLOAT;
     displacements[1] = (size_t) &(user_t.x) - (size_t) &user_t;
     //Add y.
     block_lens[2] = 1;
-    types[2] = MPI::FLOAT;
+    types[2] = MPI_FLOAT;
     displacements[2] = (size_t) &(user_t.y) - (size_t) &user_t;
     //Add dirX.
     block_lens[3] = 1;
-    types[3] = MPI::FLOAT;
+    types[3] = MPI_FLOAT;
     displacements[3] = (size_t) &(user_t.dirX) - (size_t) &user_t;
     //Add dirY
     block_lens[4] = 1;
-    types[4] = MPI::FLOAT;
+    types[4] = MPI_FLOAT;
     displacements[4] = (size_t) &(user_t.dirY) - (size_t) &user_t;
     //Add the infection state of the user.
     block_lens[5] = 1;
