@@ -3,7 +3,6 @@
 Position::Position(float x, float y, float vel, float dirX, float dirY):x(x),y(y),vel(vel),dirX(dirX),dirY(dirY){}
 
 void Position::updatePosition(int deltaTime){
-    //TODO change this formula if you use direction with float
     this->x += ((float)deltaTime) * this->vel * dirX;
     this->y += ((float)deltaTime) * this->vel * dirY;
 }
@@ -35,4 +34,25 @@ void Position::goBackToIntersection(float coefX, float coefY, float noteTerm){
     float denominator = (a*e-d*b);
     x = (f*b-c*e) / denominator;
     y = (c*d-f*a) / denominator; 
+}
+
+bool Position::setCoordinatesInsideGlobalArea(int maxX, int maxY){
+    bool hasChanged = false;
+    if(x>(float)maxX){
+        x=maxX;
+        hasChanged=true;
+    }else if(x<0.0f){
+        x=0.0f;
+        hasChanged=true;
+    }
+
+    if(y>(float)maxY){
+        y=maxY;
+        hasChanged=true;
+    }else if(y<0.0f){
+        y=0.0f;
+        hasChanged=true;
+    }
+
+    return hasChanged;
 }

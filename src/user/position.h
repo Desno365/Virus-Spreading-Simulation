@@ -20,7 +20,7 @@ class Position
         //Set the positions to the arguments values.
         void setCoordinates(float x, float y) { this->x = x; this->y = y; };
         //Update the actual value on the Position at each call. It advance of 1 second
-        //since the time step is alwasy the same.
+        //since the time step is always the same.
         void updatePosition(int deltaTime);
         //Set the position to a previous passed set of points based on the intersection with the hyperplane
         //described by the arguments of the function.
@@ -37,6 +37,10 @@ class Position
         tuple<float,float> getCoordinates();
         //Returns a tuple with (dirX,dirY).
         tuple<float,float> getDirections();
+        //Sets the position inside the global area identifies by maxX and maxY. It also requires the maximum value of 
+        //x and y allowe from the global region. It returns true if the position has been changed.
+        //NOTE: it assumes that the lower value is 0.
+        bool setCoordinatesInsideGlobalArea(int maxX, int maxY);
     private:
         //x and y coordinates of the position.
         float x,y{0};

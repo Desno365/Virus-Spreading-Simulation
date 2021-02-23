@@ -21,7 +21,7 @@ using namespace std;
 //Is the number of seconds in a day. Is used in order to print the status only after a day.
 #define SECONDS_IN_DAY 86400
 //Set this to true to print a map of the area at each step of the computation. Note: very expensive!
-#define DEBUG_PRINT_AREAS true
+#define DEBUG_PRINT_AREAS false
 
 //Retuns the value associated to the option between the two pointers
 char* getCmdOption(char ** begin, char ** end, const string & option)
@@ -212,18 +212,23 @@ int main(int argc, char** argv) {
 
     //Create the user associated to each processor(we split the number of user in an equal way for each area
     //also the infected users are equally).
-    int user_per_area = N / number_of_areas;
+    int user_per_area = floor((float)N / (float)number_of_areas);
     //Assing an extra user at the first processors, if N is not a multiple of number_of_areas.
     int user_left_out = N % number_of_areas;
-    if(my_rank<user_left_out) user_per_area++;
     //Compute the infected users per area.
-    int infected_users_area = I / number_of_areas;
+    int infected_users_area = floor((float)I / (float)number_of_areas);
     int infected_left_out = I % number_of_areas;
-    if(my_rank<infected_left_out) infected_users_area++;
+    int index=0;
+    int n_of_user_already_created=0;
     for(shared_ptr<Area> area:processor_areas){
         setCorrectBoundariesForArea(area, w, l, L);
+        area->setMaxValue(W,L);
         
-        for(int i=0;i<user_per_area;i++){
+        //Computer the users per area based on the areaID
+        int user_in_this_area = area->getID()<user_left_out ? user_per_area + 1 : user_per_area;
+        int infected_in_this_area = area->getID()<infected_left_out ? infected_users_area + 1 : infected_users_area;
+
+        for(int i=0;i<user_in_this_area;i++){
             //Generate random coordinates inside this region.
             float userX,userY;
             tie(userX,userY) = area->getRadomCoordinates();
@@ -232,12 +237,15 @@ int main(int argc, char** argv) {
             tie(userDirX,userDirY) = area->getRadomDirection();
             shared_ptr<Position> userPos = make_shared<Position>(userX,userY,v,userDirX,userDirY);
             //Compute a unique user ID
-            int userID = my_rank * N + i;
-            //Set infected the first generated users per area
-            bool isAlreadyInfected = i<infected_users_area ? true : false;
+            int userID = my_rank * N + n_of_user_already_created;
+            //Set infected the first generated users per area.
+            bool isAlreadyInfected = i<infected_in_this_area ? true : false;
             shared_ptr<User> newUser = make_shared<User>(userID, userPos, isAlreadyInfected);
             area->addUser(newUser);
+
+            n_of_user_already_created++;
         }
+        index++;
     }
 
     //NOTE: users starts to infect other users the step next to the one in which they've become infected.
@@ -317,6 +325,7 @@ int main(int argc, char** argv) {
                 vector<shared_ptr<User>> * previousUsers = &(mapOutOfAreaUsersToAreaLocal->at(outOfAreaUserVectors->first));
                 previousUsers->insert(previousUsers->end(),outOfAreaUserVectors->second->begin(),outOfAreaUserVectors->second->end());
             }
+
             //Collects now users out of area that goes to a remote location.
             map<int,shared_ptr<vector<shared_ptr<user_struct>>>> outOfAreasUserRemotelyOnThisArea = area->getOutOfAreaUsersRemote();
             for(auto outOfAreaUserVectors=outOfAreasUserRemotelyOnThisArea.begin(); outOfAreaUserVectors!=outOfAreasUserRemotelyOnThisArea.end() ; ++outOfAreaUserVectors){
@@ -365,15 +374,6 @@ int main(int argc, char** argv) {
             }else{
                 int index = 0;
                 for(shared_ptr<user_struct> user_t : mapOutOfAreaUsersToAreaRemote->at(i)){
-                    if(i==0 && (user_t.get()->x<0 || user_t.get()->x>100 || user_t.get()->y<50 || user_t.get()->y>100)){
-                        cout<< "Error in sending to 0 from "<< my_rank<<"\n";
-                    }else if(i==1 && (user_t.get()->x<100 || user_t.get()->x>200 || user_t.get()->y<50 || user_t.get()->y>100)){
-                        cout<< "Error in sending to 1 from "<< my_rank<<"\n";
-                    }else if(i==2 && (user_t.get()->x<0 || user_t.get()->x>100 || user_t.get()->y<0 || user_t.get()->y>50)){
-                        cout<< "Error in sending to 2 from "<< my_rank<<"\n";
-                    }else if(i==3 && (user_t.get()->x<100 || user_t.get()->x>200 || user_t.get()->y<0 || user_t.get()->y>50)){
-                        cout<< "Error in sending to 3 from "<< my_rank<<"\n";
-                    }
                     user_struct user = *(user_t.get());
                     send_vector[index] = user;   
                     index++;
@@ -393,8 +393,29 @@ int main(int argc, char** argv) {
                 }
                 //Check that such vector is now empty
                 if(!newUsers.empty()){
-                    //TODO put the users inside the nearest area.
-                    cout << "Error in processor " << my_rank << " since the vector new received new users from remote locations is not empty!\n";
+                    //If the velocity is too high a user can go from a certain area beyond its neighbor area.
+                    //In this case we set such user to in the center of the area nearest them.
+                    for(shared_ptr<User> user : newUsers){
+                        float minDistance = 0;
+                        bool firstIteration = true;
+                        shared_ptr<Area> nearestArea;
+                        float newUserX, newUserY;
+                        //If the processor has received a user it means that it has at least one area
+                        for(shared_ptr<Area> area : processor_areas){
+                            float centerX, centerY;
+                            tie(centerX, centerY) = area->getAreaCenter();
+                            float userDistanceFromCenter = user->getDistance(centerX , centerY); 
+                            if(firstIteration || userDistanceFromCenter<minDistance){
+                                firstIteration = false;
+                                minDistance = userDistanceFromCenter; 
+                                nearestArea = area;
+                                newUserX = centerX;
+                                newUserY = centerY;
+                            }
+                        }
+                        user->setUserPosition(newUserX,newUserY);
+                        nearestArea->addUser(user);
+                    }
                 }
             }
             //Free the buffer used during the comunication.

@@ -34,10 +34,12 @@ class User
         //Create an instance of the user from its struct and the provided velocity.
         //After this the struct is destroyed.
         User(user_struct *user_t, float vel);
-        //Is the posisiton associated to the user
+        //Is the position associated to the user
         shared_ptr<Position> pos;
         //Updates the position associated to this user.
         void updateUserPosition(int deltaTime);
+        //Sets the user position to the one specified by the input.
+        void setUserPosition(float x, float y);
         //Updates the direction associated to this user.
         void updateUserDirection(float newDirX, float newDirY);
         //It requires the elapsed delta time to update eventually the counter and a boolean that says 
@@ -64,6 +66,12 @@ class User
         bool isNear(float x, float y, float infectionDistance);
         //Returns a shared pointer of a user struct starting from the pointer of another user struct. I performs a clone.
         static shared_ptr<user_struct> getSharedFromStruct(user_struct &user_t);
+        //Set the user's coordinates inside the global area if he has gone outside. It also requires the maximum value of 
+        //x and y allowe from the global region.
+        //NOTE: it assumes that the lower value is 0.
+        void resetUserInsideTheGlobalArea(int maxX, int maxY);
+        //Returns the distance between the actual position of the user and the coordinates provided as input.
+        float getDistance(float otherX, float otherY);
     private:
         //The unique id of the user.
         int id;

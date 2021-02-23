@@ -146,10 +146,14 @@ void User::updateUserInfectionState(bool isNearAnInfected, int deltaTime){
 }
 
 bool User::isNear(float x, float y, float infectionDistance){
-    float distanceX = pos->getX() - x;
-    float distanceY = pos->getY() - y;
-    float distance = sqrt(pow(distanceX,2) + pow(distanceY,2)); 
+    float distance = getDistance(x,y);
     return distance<=infectionDistance;
+}
+
+float User::getDistance(float otherX, float otherY){
+    float distanceX = pos->getX() - otherX;
+    float distanceY = pos->getY() - otherY;
+    return sqrt(pow(distanceX,2) + pow(distanceY,2)); 
 }
 
 void User::goBackToIntersection(float coefX, float coefY, float noteTerm){
@@ -168,4 +172,13 @@ shared_ptr<user_struct> User::getSharedFromStruct(user_struct &user_t){
     returned_user_t->dirX = user_t.dirX;
     returned_user_t->dirY = user_t.dirY;
     return returned_user_t;
+}
+
+void User::resetUserInsideTheGlobalArea(int maxX, int maxY){
+    if(pos->setCoordinatesInsideGlobalArea(maxX,maxY)) updateStruct();
+}
+
+void User::setUserPosition(float x, float y){
+    pos->setCoordinates(x,y);
+    updateStruct();
 }

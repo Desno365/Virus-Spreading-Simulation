@@ -86,6 +86,10 @@ class Area
         tuple<int,int> actuallyInfectedAndImmuneUser();
         //Return the id of this area.
         int getID() { return id; };
+        //Returns the coordinates of the center point of the area as (Col,Row), the same as (x,y).
+        tuple<float,float> getAreaCenter();
+        //Sets the maximum values of x and y of the global area.
+        void setMaxValue(int maxX, int maxY){ this->maxX=maxX; this->maxY=maxY; };
 
         // METHODS FOR TESTS:
         map<int,shared_ptr<User>> getUserNearInternalBorders();
@@ -104,6 +108,9 @@ class Area
         int my_processor_rank;
         //Are the boundaries of the area with respect to the global area.
         int lowerX,lowerY,higherX,higherY;
+        //Are the values of the max x and y values inside the global area, they are used if a user goes beyond them
+        //NOTE: the lower value is supposed to be 0 for both x and y.
+        int maxX, maxY;
         //Is the map that associated the id of the users with the user present inside this area(no matter if they are inside
         //or if they are near the internal borders).
         map<int,shared_ptr<User>> usersInArea;

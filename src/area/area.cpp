@@ -400,6 +400,8 @@ void Area::addUserOutOfArea(Direction direction, shared_ptr<User> user, float bo
     if(neighborAreas.count(direction)>0){
         //Remove the user from the list of the user in area.
         usersInArea.erase(user->getId());
+        //Than we check that the coordinates of the user has not gone outside the global area.
+        user->resetUserInsideTheGlobalArea(maxX,maxY);
         //Get the correspondent neighbor area and see if it is local or remote.
         shared_ptr<NeighborArea> neighborArea = neighborAreas[direction];
         if(neighborArea->isLocal(my_processor_rank)){
@@ -428,10 +430,10 @@ void Area::addUserOutOfArea(Direction direction, shared_ptr<User> user, float bo
     }else{
         //If the are isn't present than the user changes direction and remains in this area.
         //The user's coordinates are also updated to the nearest border.
-        if(direction==NorthEast) user->pos->setCoordinates(higherX,higherY);
-        else if(direction==NorthWest) user->pos->setCoordinates(lowerX,higherY);
-        else if(direction==SouthEast) user->pos->setCoordinates(higherX,lowerY);
-        else if(direction==SouthWest) user->pos->setCoordinates(lowerX,lowerY);
+        if(direction==NorthEast) user->setUserPosition(higherX,higherY);
+        else if(direction==NorthWest) user->setUserPosition(lowerX,higherY);
+        else if(direction==SouthEast) user->setUserPosition(higherX,lowerY);
+        else if(direction==SouthWest) user->setUserPosition(lowerX,lowerY);
         else{
             //Set the user coordinates to be on the nearest border, by doing the intersection between plane.
             int coefX,coefY;
@@ -483,6 +485,10 @@ bool Area::checkIfCoordinatesAreOKWithDirection(Direction direction, float x, fl
     default:
         return false;
     }
+}
+
+tuple<float,float> Area::getAreaCenter(){
+    return { (higherX-lowerX)/2,(higherY-lowerY)/2};
 }
 
 // METHODS FOR TESTS:

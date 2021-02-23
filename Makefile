@@ -3,11 +3,11 @@ SOURCE = ./src
 OPENMPIPATH = /usr/lib/x86_64-linux-gnu/openmpi/include
 #OPENMPIPATH = /usr/local/Cellar/open-mpi/4.0.5/include
 ## Here select the ID of the processor you are interested in debugging
-DEBUGGEDPROCESSOR = 2
+DEBUGGEDPROCESSOR = 0
 REQUIRED = $(wildcard $(SOURCE)/**/*.cpp)
 CFLAGS = -std=c++11 -Wall -ggdb -O0 -lmpi -I${OPENMPIPATH} -I${SOURCE}
-MPIRUNFLAGS = -np 4
-LAUNCHPARAMETERS = -N 50 -I 0 -W 200 -L 100 -w 100 -l 50 -v 100 -d 10 -t 1 -D 90
+MPIRUNFLAGS = -np 5
+LAUNCHPARAMETERS = -N 1000 -I 50 -W 300 -L 100 -w 50 -l 25 -v 5 -d 10 -t 1 -D 90
 
 all: ${OBJECT}
 

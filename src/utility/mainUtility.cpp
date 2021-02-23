@@ -24,7 +24,7 @@ int getStrideVertical(int L,int l){
 //NOTE: the ids of the areas are assigned from left to right, top to bottom in increasing order.
 vector<shared_ptr<Area>> getArea(int numberOfAreas, int processor_rank, int world_size,int stride, float infectionDistance, int deltaTime){
     vector<shared_ptr<Area>> areas;
-    int minAreasForProcessor = numberOfAreas / world_size;
+    int minAreasForProcessor = floor((float)numberOfAreas / (float)world_size);
     int maxAreasForProcessor = numberOfAreas % world_size == 0 ? minAreasForProcessor : minAreasForProcessor + 1;
     int leftOutAreas = numberOfAreas % world_size;
     int startingAreaID,endingAreaID;
@@ -58,7 +58,6 @@ vector<shared_ptr<Area>> getArea(int numberOfAreas, int processor_rank, int worl
                         int temp = neighborID-leftOutAreas*maxAreasForProcessor;
                         processorArea = leftOutAreas + temp/minAreasForProcessor;
                     }
-                    //TODO check the value of the neighborID.
                     shared_ptr<NeighborArea> neighborArea = make_shared<NeighborArea>(processorArea,neighborID);
                     area->setNeighborArea(neighborArea,(Direction)(i*NEIGHBOR_DISTANCE+j));
                 }
