@@ -77,8 +77,8 @@ class Area
         //Return a tuple with the value of (X,Y) that represents the random direction. The values will be:
         //X is considered aligned with the Column, while Y with the Row of the global map.
         tuple<float,float> getRadomDirection(); 
-        //Prints on the standard output the actual state of the area.
-        void printActualState(FILE *ptr);
+        //Prints on the standard output the simulation data.
+        void printSimulationData(FILE *ptr, int day);
         //Prints on the standard output a representation of the area.
         void printArea(FILE *ptr, int timestamp);
         //Returns a tuple in which the first elements is the number of users actually infected in this area, while

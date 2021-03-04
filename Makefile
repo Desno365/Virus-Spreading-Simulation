@@ -1,7 +1,7 @@
 OBJECT = main.o
 SOURCE = ./src
-OPENMPIPATH = /usr/lib/x86_64-linux-gnu/openmpi/include
-#OPENMPIPATH = /usr/local/Cellar/open-mpi/4.0.5/include
+#OPENMPIPATH = /usr/lib/x86_64-linux-gnu/openmpi/include
+OPENMPIPATH = /usr/local/Cellar/open-mpi/4.0.5/include
 # Here select the ID of the processor you are interested in debugging
 DEBUGGEDPROCESSOR = 0
 REQUIRED = $(wildcard $(SOURCE)/**/*.cpp)

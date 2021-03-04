@@ -183,14 +183,11 @@ void Area::addNearbyUsersLocal(vector<shared_ptr<User>> nearbyUsersLocal){
     }
 }
 
-void Area::printActualState(FILE *ptr){
+void Area::printSimulationData(FILE *ptr, int day){
     int infectedUser,immuneUser;
     tie(infectedUser,immuneUser) = actuallyInfectedAndImmuneUser();
     ostringstream stream;
-    stream << "Area ID: " << id << "\n"
-            "   Actual population: " << usersInArea.size() << "\n" 
-            "   Actually infected: " << infectedUser << "\n" 
-            "   Actually immune: " << immuneUser << "\n";
+    stream << "area" << id << "," << day << "," << infectedUser << "," << immuneUser << "," << usersInArea.size() << "\n";
     char * string = fromStringToCharName(stream.str());
     fprintf(ptr,"%s", string);
     free(string);

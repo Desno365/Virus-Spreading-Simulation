@@ -256,16 +256,20 @@ int main(int argc, char** argv) {
 
     MPI_Barrier(MPI_COMM_WORLD);
 
-    //For each processor gets its outputFile:
-    string fileName = "./outputs/results-" + to_string(my_rank) +".csv";
-    char * str = fromStringToCharName(fileName);
-    FILE *fptr = fopen(str,"w");
-    if(fptr == NULL)
+    //For each processor gets its simulation data file:
+    string fileNameData = "./outputs/simulation-data/part-" + to_string(my_rank) +".csv";
+    char * strData = fromStringToCharName(fileNameData);
+    FILE *fptrData = fopen(strData,"w");
+    if(fptrData == NULL)
     {
-        printf("Error in opening %s!",str);   
-        exit(1);             
+        printf("Error in opening %s!",strData);
+        exit(1);
     }
-    free(str);
+    free(strData);
+    string firstLineData= "country,day,currentInfected,currentImmune,numOfPeopleInside\n";
+    strData = fromStringToCharName(firstLineData);
+    fprintf(fptrData,"%s", strData);
+    free(strData);
 
     //For each processor gets its print-area file:
     string fileNameAreas = "./outputs/print-area/processor-" + to_string(my_rank) +".txt";
@@ -298,21 +302,6 @@ int main(int argc, char** argv) {
 
     //Now starts the main loop.
     for(int elapsedTime = 0; elapsedTime < total_seconds; elapsedTime+=t){
-        if ( (elapsedTime / SECONDS_IN_DAY) >= next_day_print_status ){
-            if(my_rank==0) cout<<"Printing spreading infections status at day " << next_day_print_status << "\n";
-            string recap = "The state of the infection spreading at day "+ to_string(next_day_print_status) + " of the computation is:\n";
-            str = fromStringToCharName(recap);
-            fprintf(fptr,"%s", str);
-            free(str);
-            for(shared_ptr<Area> area:processor_areas){
-                area->printActualState(fptr);
-            }
-            str = fromStringToCharName("\n");
-            fprintf(fptr,"%s", str);
-            fflush(fptr);
-            free(str);
-            next_day_print_status++;
-        }
         //Wait fo everyone to reach this point.
         MPI_Barrier(MPI_COMM_WORLD);
 
@@ -513,6 +502,15 @@ int main(int argc, char** argv) {
             }
         }
 
+        // Print simulation data of areas.
+        if ( (elapsedTime / SECONDS_IN_DAY) >= next_day_print_status ){
+            if(my_rank==0) cout<<"Printing simulation data at day " << next_day_print_status << "\n";
+            for(shared_ptr<Area> area:processor_areas)
+                area->printSimulationData(fptrData, next_day_print_status);
+            fflush(fptrData);
+            next_day_print_status++;
+        }
+
         //After this every area has a global vision of the map so it can update the infected status of the user.
         for(shared_ptr<Area> area:processor_areas){
             area->updateUserInfectionStatus();
@@ -530,18 +528,10 @@ int main(int argc, char** argv) {
         resetPopulateMapOfUsersVector(mapNearBorderUsersToAreaRemote);
     }
 
-    //Print the state at the end of the computation.
-    MPI_Barrier(MPI_COMM_WORLD);
-    string recap = "The state of the infection spreading at the end of the computation is:\n";
-    str = fromStringToCharName(recap);
-    fprintf(fptr,"%s", str);
-    free(str);
-    for(shared_ptr<Area> area:processor_areas){
-        area->printActualState(fptr);
-    }
-
-    //Closed the opened file.
-    fclose(fptr);
+    //Close the opened files.
+    fclose(fptrData);
+    if(DEBUG_PRINT_AREAS)
+        fclose(fptrAreas);
 
     //TearDown the data structure used for the main loop;
     mapOutOfAreaUsersToAreaLocal->clear();
