@@ -2,7 +2,7 @@
 .idea/
 outputs/
 *.o
-*.pdf
 *core
 *.gdb_history
 *.dSYM
+
