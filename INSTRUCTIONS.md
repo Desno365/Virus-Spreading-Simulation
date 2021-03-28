@@ -15,4 +15,11 @@ The content of the hostfile should be something like this:
 localhost slots=2 max-slots=2
 worker slots=1 max-slots=1
 ```
-Pay attention to the configuration of the firewall.
+Pay attention to the configuration of the firewall. Use this command on all the machine:
+```
+sudo ufw disable
+sudo iptables -P INPUT ACCEPT
+sudo iptables -P OUTPUT ACCEPT
+sudo iptables -P FORWARD ACCEPT
+sudo iptables -F
+```
