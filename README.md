@@ -29,7 +29,7 @@ An individual belongs to a country if it is in that country at the end of the da
   * v = moving speed for an individual;
   * d = maximum spreading distance (in meters): a susceptible individual that remains closer than d to at least one infected individual becomes infected;
   * t = time step (in seconds): the simulation recomputes the position and status (susceptible, infected, immune) of each individual with a temporal granularity of t (simulated) seconds;
-* You can make any assumptions on the behavior of individuals when they reach the boundaries of the area (for instance, they can change direction to guarantee that they remain in the area)
+* Any assumptions can be made on the behavior of individuals when they reach the boundaries of the area (for instance, they can change direction to guarantee that they remain in the area)
 
 
 ## Usage
