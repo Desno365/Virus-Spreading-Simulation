@@ -1,12 +1,12 @@
 OBJECT = main.o
 SOURCE = ./src
-OPENMPIPATH = /usr/lib/x86_64-linux-gnu/openmpi/include
-#OPENMPIPATH = /usr/local/Cellar/open-mpi/4.0.5/include
+#OPENMPIPATH = /usr/lib/x86_64-linux-gnu/openmpi/include
+OPENMPIPATH = /usr/local/Cellar/open-mpi/4.0.5/include
 # Here select the ID of the processor you are interested in debugging
 DEBUGGEDPROCESSOR = 0
 REQUIRED = $(wildcard $(SOURCE)/**/*.cpp)
 CFLAGS = -std=c++11 -Wall -ggdb -O0 -lmpi -I${OPENMPIPATH} -I${SOURCE}
-MPIRUNFLAGS = -np 6
+MPIRUNFLAGS = -np 4
 MPIDISTRIBUTE = --hostfile hostfile
 # Notes:
 # - A person walking has a speed of ≈1.3 m/s.
@@ -15,7 +15,7 @@ MPIDISTRIBUTE = --hostfile hostfile
 #		If we suppose 95% of people are stationary we have an average speed of 0.065m/s.
 # - The spreading distance d depends on the virus itself and many other conditions.
 #		For Covid an almost safe distance is thought to be 2m.
-LAUNCHPARAMETERS = -N 10000 -I 10 -W 1500 -L 1000 -w 250 -l 250 -v 0.13 -d 2.0 -t 500 -D 7
+LAUNCHPARAMETERS = -N 100 -I 10 -W 100 -L 100 -w 50 -l 50 -v 0.13 -d 2.0 -t 500 -D 7
 
 all: ${OBJECT}
 
