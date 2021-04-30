@@ -3,7 +3,7 @@
 
 ## Assignment
 
-Note: for more details on the assignment see [Projects 2021.pdf](https://github.com/Desno365/Virus-Spreading-Simulation/blob/master/Projects%202021.pdf)
+Note: for more details on the assignment see [Projects 2021.pdf](https://github.com/Desno365/Virus-Spreading-Simulation/blob/main/Projects%202021.pdf)
 
 #### Description of the project
 
@@ -36,7 +36,7 @@ An individual belongs to a country if it is in that country at the end of the da
 
 To run the program on a single machine install Open MPI first, then use the tasks defined in the Makefile to execute the program.
 
-Instead, to run the program on multiple machines see [INSTRUCTIONS.md](https://github.com/Desno365/Virus-Spreading-Simulation/blob/master/INSTRUCTIONS.md).
+Instead, to run the program on multiple machines see [INSTRUCTIONS.md](https://github.com/Desno365/Virus-Spreading-Simulation/blob/main/INSTRUCTIONS.md).
 
 
 ## Grade
