@@ -1,4 +1,4 @@
-# A Simple Model for Virus Spreading
+# Virus Spreading Simulation using Open MPI
 
 
 ## Assignment
